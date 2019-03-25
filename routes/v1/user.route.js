@@ -35,10 +35,6 @@ router
    * @apiParam  {String}             [email]      User's email
    * @apiParam  {String=user,admin}  [role]       User's role
    *
-   * @apiSuccess {Object[]} users List of users.
-   *
-   * @apiError (Unauthorized 401)  Unauthorized  Only authenticated users can access the data
-   * @apiError (Forbidden 403)     Forbidden     Only admins can access the data
    */
   .get(authorize(ADMIN), validate(listUsers), controller.list)
   /**
