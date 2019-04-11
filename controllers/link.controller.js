@@ -2,6 +2,7 @@
 const httpStatus = require('http-status');
 const Link = require('../models/link.model');
 // const User = require('../models/user.model');
+const logger = require('../config/logger');
 const PageView = require('../models/pageView.model');
 const APIError = require('../utils/APIError');
 
@@ -53,6 +54,7 @@ exports.getLink = (req, res, next) => {
  */
 exports.create = async (req, res, next) => {
   try {
+    logger.info(req);
     const { CreatorId, uri, sLink } = req.body; // i instead of l for uri in req.body
     // TODO: Setup if statements to check if youtube, twitter, facebook,
     // video, etc. or default to `website`
