@@ -11,7 +11,7 @@ const {
 const router = express.Router();
 
 router
-  .route('/:linkId')
+  .route('/link/:linkId')
   /**
    * @api {get} /link Get link info
    * @apiDescription Get a link and redirects to given

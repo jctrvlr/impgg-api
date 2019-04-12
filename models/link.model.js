@@ -11,21 +11,17 @@ const linkSchema = new mongoose.Schema({
   creatorId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: false,
   },
   url: {
     type: String,
-    required: true,
     match: /((([A-Za-z]{3,9}:(?:\/\/)?)(?:[-;:&=+$,\w]+@)?[A-Za-z0-9.-]+|(?:www\.|[-;:&=+$,\w]+@)[A-Za-z0-9.-]+)((?:\/[+~%/.\w\-_]*)?\??(?:[-+=&;%@.\w_]*)#?(?:[.!/\\\w]*))?)/,
   },
   type: {
     type: String,
-    required: true,
     default: 'website',
   },
   shortLink: {
     type: String,
-    required: true,
     unique: true,
   },
 }, {
@@ -83,10 +79,7 @@ linkSchema.statics = {
 
       if (link) return link;
 
-      throw new APIError({
-        message: ' does not exist',
-        status: httpStatus.NOT_FOUND,
-      });
+      return null;
     } catch (error) {
       throw error;
     }

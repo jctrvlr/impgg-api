@@ -33,3 +33,5 @@ router
    * @apiError (Forbidden 403)     Forbidden     Only admins can access the data
    */
   .get(authorize(LOGGED_USER), validate(listLinks), controller.list);
+
+module.exports = router;

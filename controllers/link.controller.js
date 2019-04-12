@@ -4,29 +4,33 @@ const Link = require('../models/link.model');
 // const User = require('../models/user.model');
 const logger = require('../config/logger');
 const PageView = require('../models/pageView.model');
-const APIError = require('../utils/APIError');
 
 /**
  * Get Link and redirect + pageview
  * @public
  */
-exports.get = (req, res, next) => {
+exports.get = async (req, res, next) => {
   try {
     const { linkId } = req.params;
-    const link = Link.findByShort(linkId);
-    if (!link) throw new APIError({ message: 'Link cannot be found' });
-    // eslint-disable-next-line no-unused-vars
-    const pageview = new PageView({
-      linkId: link._id,
-      ip: req.ip,
-      userAgent: req.userAgent,
-    }).save();
+    const link = await Link.findByShort(linkId);
 
-    // TODO: Get location data about user and save in pageview --
-    // Do we save location data with initial pageview object or add information on to object.
+    if (link) {
+      const pageview = new PageView({
+        linkId: link._id,
+        ip: req.ip,
+        userAgent: req.userAgent,
+      });
+      pageview.save();
 
-    // Redirect to saved URI
-    res.redirect(301, link.url);
+      // TODO: Get location data about user and save in pageview --
+      // Do we save location data with initial pageview object or add information on to object.
+
+      // Redirect to saved URI
+      // res.redirect(301, link.url);
+    } else {
+      res.status(httpStatus.NOT_FOUND);
+      res.json({ error: 'Link cannot be found' });
+    }
   } catch (error) {
     next(error);
   }
@@ -36,13 +40,18 @@ exports.get = (req, res, next) => {
  * Get Link Info
  * @public
  */
-exports.getLink = (req, res, next) => {
+exports.getLink = async (req, res, next) => {
   try {
+    logger.info(req);
     const { linkId } = req.params;
-    const link = Link.findByShort(linkId);
-    if (!link) throw new APIError({ message: 'Link cannot be found' });
+    const link = await Link.findByShort(linkId);
 
-    res.json(link.transform());
+    if (link) {
+      res.json(link.transform());
+    } else {
+      res.status(httpStatus.NOT_FOUND);
+      res.json({ error: 'Link cannot be found' });
+    }
   } catch (error) {
     next(error);
   }
@@ -60,10 +69,10 @@ exports.create = async (req, res, next) => {
     // video, etc. or default to `website`
     // TODO: Setup shortlink generation -- separate function?
     let shortLink = '';
-    if (!sLink) {
-      shortLink = await Link.generateShortLink(uri);
-    } else {
+    if (sLink) {
       shortLink = sLink;
+    } else {
+      shortLink = await Link.generateShortLink(uri);
     }
     const linkType = 'website';
 
