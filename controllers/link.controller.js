@@ -26,7 +26,7 @@ exports.get = async (req, res, next) => {
       // Do we save location data with initial pageview object or add information on to object.
 
       // Redirect to saved URI
-      // res.redirect(301, link.url);
+      res.redirect(301, link.url);
     } else {
       res.status(httpStatus.NOT_FOUND);
       res.json({ error: 'Link cannot be found' });
