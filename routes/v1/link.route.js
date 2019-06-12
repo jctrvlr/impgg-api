@@ -13,7 +13,7 @@ const router = express.Router();
 router
   .route('/link/:linkId')
   /**
-   * @api {get} /link Get link info
+   * @api {get} v1/link Get link info
    * @apiDescription Get a link and redirects to given
    * @apiVersion 1.0.0
    * @apiName Get Link
@@ -36,7 +36,7 @@ router
 router
   .route('/')
   /**
-   * @api {post} /link Create Link
+   * @api {post} v1/link Create Link
    * @apiDescription Create a new link
    * @apiVersion 1.0.0
    * @apiName CreateLink
@@ -56,9 +56,10 @@ router
    *
    * @apiError (Bad Request 400) Validation Error Some parameters may contain invalid values
    */
-  .post(authorize(LOGGED_USER), validate(createLink), controller.create)
+  // TODO: Figure out how to create link connected to user
+  .post(validate(createLink), controller.create)
   /**
-   * @api {put} /link Update Link
+   * @api {put} v1/link Update Link
    * @apiDescription Update an existing link
    * @apiVersion 1.0.0
    * @apiName UpdateLink

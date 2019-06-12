@@ -33,8 +33,8 @@ const linkSchema = new mongoose.Schema({
  * - pre-save hooks
  * - validations
  * - virtuals
- *//*
-linkSchema.pre('save', async function save(next) {
+ */
+linkSchema.pre('save', async (next) => {
   try {
     // TODO: Generate short link if not given here -- Or not in save but somewhere else
     return next();
@@ -42,7 +42,6 @@ linkSchema.pre('save', async function save(next) {
     return next(error);
   }
 });
-*/
 
 /**
  * Methods
@@ -66,16 +65,16 @@ linkSchema.method({
 linkSchema.statics = {
 
   /**
-   * Find link by short_link
+   * Find link by shortLink
    *
    * @param {String} shortLink - The short link of a link
    * @returns {Promise<User, APIError>}
    */
-  async findByShort(shortLink) {
+  async findByShort(sLink) {
     try {
-      if (!shortLink) throw new APIError({ message: 'An shortLink is required' });
+      if (!sLink) throw new APIError({ message: 'An shortLink is required' });
 
-      const link = await this.findOne({ short_link: shortLink }).exec();
+      const link = await this.findOne({ shortLink: sLink }).exec();
 
       if (link) return link;
 
@@ -91,12 +90,10 @@ linkSchema.statics = {
    * @param {String} url - url of website it will link too
    * @returns {ShortLink}
    */
-  async generateShortLink(url) {
+  async generateShortLink() {
     try {
+      // TODO: Generate link using url
       const shortLink = Math.random().toString(36).substr(2);
-      if (this.checkDuplicateShortLink(shortLink)) {
-        this.generateShortLink(url);
-      }
       return shortLink;
     } catch (error) {
       throw error;
@@ -130,8 +127,9 @@ linkSchema.statics = {
    * @param {String} shortLink - Shortlink generated for a link
    * @returns {Boolean}
    */
-  async checkDuplicateShortLink(shortLink) {
-    const link = await this.findOne({ short_link: shortLink }).exec();
+  async checkDuplicateShortLink(sLink) {
+    const link = this.findOne({ shortLink: sLink });
+    console.log(link);
     if (link) return true;
     return false;
   },
@@ -148,9 +146,9 @@ linkSchema.statics = {
       return new APIError({
         message: 'Validation Error',
         errors: [{
-          field: 'short_link',
+          field: 'shortLink',
           location: 'body',
-          messages: ['"short_link" already exists'],
+          messages: ['"shortLink" already exists'],
         }],
         status: httpStatus.CONFLICT,
         isPublic: true,

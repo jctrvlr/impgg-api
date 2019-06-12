@@ -11,7 +11,7 @@ const router = express.Router();
 router
   .route('/')
   /**
-   * @api {get} /links Get list of links
+   * @api {get} v1/links Get list of links
    * @apiDescription Get a list of links
    * @apiVersion 1.0.0
    * @apiName ListLinks

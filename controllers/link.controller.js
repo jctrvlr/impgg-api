@@ -21,13 +21,15 @@ exports.get = async (req, res, next) => {
         userAgent: req.userAgent,
       });
       pageview.save();
+      console.log(req.userAgent);
 
       // TODO: Get location data about user and save in pageview --
       // Do we save location data with initial pageview object or add information on to object.
 
       // Redirect to saved URI
-      res.redirect(301, link.url);
+      res.redirect(302, link.url);
     } else {
+      // TODO: Redirect to link not found page
       res.status(httpStatus.NOT_FOUND);
       res.json({ error: 'Link cannot be found' });
     }
@@ -74,13 +76,14 @@ exports.create = async (req, res, next) => {
     } else {
       shortLink = await Link.generateShortLink(uri);
     }
+    console.log(shortLink);
     const linkType = 'website';
 
     const link = new Link({
       creatorId: CreatorId,
       url: uri,
       type: linkType,
-      short_link: shortLink,
+      shortLink,
     });
 
     const savedLink = await link.save();
