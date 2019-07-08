@@ -4,7 +4,6 @@
   "description": "",
   "main": "app.js",
   "scripts": {
-    "precommit": "yarn lint",
     "start": "cross-env NODE_ENV=production pm2 start ./app.js",
     "dev": "nodemon ./app.js",
     "lint": "eslint . --ignore-path .gitignore --ignore-pattern internals/scripts",
@@ -64,5 +63,10 @@
     "sinon": "^7.2.7",
     "sinon-chai": "^3.3.0",
     "supertest": "^3.4.2"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "yarn lint"
+    }
   }
 }
