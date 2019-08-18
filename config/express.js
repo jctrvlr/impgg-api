@@ -9,6 +9,7 @@ const helmet = require('helmet');
 const passport = require('passport');
 const routes = require('../routes/v1');
 const linkRoutes = require('../routes');
+const pubRoutes = require('../routes/juliet');
 const { logs } = require('./vars');
 const strategies = require('./passport');
 const error = require('../middlewares/error');
@@ -50,7 +51,8 @@ passport.use('google', strategies.google);
 
 // mount api v1 routes
 app.use('/v1', routes);
-
+// mount api pub routes
+app.use('/juliet', pubRoutes);
 // mount link routes
 app.use('/', linkRoutes);
 

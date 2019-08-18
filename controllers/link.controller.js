@@ -60,36 +60,78 @@ exports.getLink = async (req, res, next) => {
 };
 
 /**
- * Create new link
+ * Create new link no auth
+ * @public
+ */
+exports.createPub = async (req, res, next) => {
+  try {
+    logger.info(req);
+    const { uri, sLink } = req.body; // i instead of l for uri in req.body
+    // TODO: Setup if statements to check if youtube, twitter, facebook,
+    // video, etc. or default to `website`
+    // TODO: CHECK IF USER HAS CREATED A SHORTLINK FOR URI already
+    if (await Link.checkDuplicateShortLink(sLink)) {
+      res.status(httpStatus.BAD_REQUEST);
+      res.json({ error: 'Short link already exists' });
+    } else {
+      let shortLink = '';
+      if (sLink) {
+        shortLink = sLink;
+      } else {
+        shortLink = await Link.generateShortLink(uri);
+      }
+      const linkType = 'website';
+
+      const link = new Link({
+        url: uri,
+        type: linkType,
+        shortLink,
+      });
+
+      const savedLink = await link.save();
+      res.status(httpStatus.CREATED);
+      res.json(savedLink.transform());
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Create new link with auth
  * @public
  */
 exports.create = async (req, res, next) => {
   try {
     logger.info(req);
-    const { CreatorId, uri, sLink } = req.body; // i instead of l for uri in req.body
+    const { uri, sLink } = req.body; // i instead of l for uri in req.body
     // TODO: Setup if statements to check if youtube, twitter, facebook,
     // video, etc. or default to `website`
-    // TODO: Setup shortlink generation -- separate function?
     // TODO: CHECK IF USER HAS CREATED A SHORTLINK FOR URI already
-    let shortLink = '';
-    if (sLink) {
-      shortLink = sLink;
+    const dupCheck = await Link.checkDuplicateShortLink(sLink);
+    if (dupCheck && sLink !== null) {
+      res.status(httpStatus.BAD_REQUEST);
+      res.json({ error: 'Short link already exists' });
     } else {
-      shortLink = await Link.generateShortLink(uri);
+      let shortLink = '';
+      if (sLink) {
+        shortLink = sLink;
+      } else {
+        shortLink = await Link.generateShortLink(uri);
+      }
+      const linkType = 'website';
+
+      const link = new Link({
+        creatorId: req.user._id,
+        url: uri,
+        type: linkType,
+        shortLink,
+      });
+
+      const savedLink = await link.save();
+      res.status(httpStatus.CREATED);
+      res.json(savedLink.transform());
     }
-    console.log(shortLink);
-    const linkType = 'website';
-
-    const link = new Link({
-      creatorId: CreatorId,
-      url: uri,
-      type: linkType,
-      shortLink,
-    });
-
-    const savedLink = await link.save();
-    res.status(httpStatus.CREATED);
-    res.json(savedLink.transform());
   } catch (error) {
     next(error);
   }

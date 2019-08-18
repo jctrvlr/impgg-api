@@ -93,7 +93,11 @@ linkSchema.statics = {
   async generateShortLink() {
     try {
       // TODO: Generate link using url
-      const shortLink = Math.random().toString(36).substr(2);
+      const shortLink = Math.random().toString(36).substr(5, 10);
+      const checkDup = await this.checkDuplicateShortLink(shortLink);
+      if (checkDup) {
+        this.generateShortLink();
+      }
       return shortLink;
     } catch (error) {
       throw error;
@@ -128,10 +132,11 @@ linkSchema.statics = {
    * @returns {Boolean}
    */
   async checkDuplicateShortLink(sLink) {
-    const link = this.findOne({ shortLink: sLink });
-    console.log(link);
-    if (link) return true;
-    return false;
+    this.findOne({ shortLink: sLink }, (err, link) => {
+      console.log(link);
+      if (link !== null) return true;
+      return false;
+    });
   },
 
   /**
