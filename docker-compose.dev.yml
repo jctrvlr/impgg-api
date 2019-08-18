@@ -4,3 +4,4 @@ services:
     command: yarn dev -- -L
     environment:
       - NODE_ENV=development
+      - PORT=3001

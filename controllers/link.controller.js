@@ -70,6 +70,7 @@ exports.create = async (req, res, next) => {
     // TODO: Setup if statements to check if youtube, twitter, facebook,
     // video, etc. or default to `website`
     // TODO: Setup shortlink generation -- separate function?
+    // TODO: CHECK IF USER HAS CREATED A SHORTLINK FOR URI already
     let shortLink = '';
     if (sLink) {
       shortLink = sLink;
