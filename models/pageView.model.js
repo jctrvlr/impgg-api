@@ -16,14 +16,8 @@ const pageViewSchema = new mongoose.Schema({
     required: true,
   },
   userAgent: {
-    isMobile: Boolean,
-    isDesktop: Boolean,
-    isBot: Boolean,
-    browser: String,
-    version: String,
-    os: String,
-    platform: String,
-    source: String,
+    type: Object,
+    required: true,
   },
   location: {
     hostname: {

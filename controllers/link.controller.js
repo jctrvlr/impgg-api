@@ -18,10 +18,9 @@ exports.get = async (req, res, next) => {
       const pageview = new PageView({
         linkId: link._id,
         ip: req.ip,
-        userAgent: req.userAgent,
+        userAgent: req.useragent,
       });
       pageview.save();
-      console.log(req.userAgent);
 
       // TODO: Get location data about user and save in pageview --
       // Do we save location data with initial pageview object or add information on to object.
