@@ -1,5 +1,6 @@
 /* eslint-disable no-param-reassign */
 const httpStatus = require('http-status');
+const axios = require('axios');
 const Link = require('../models/link.model');
 // const User = require('../models/user.model');
 const logger = require('../config/logger');
@@ -19,6 +20,7 @@ exports.get = async (req, res, next) => {
         linkId: link._id,
         ip: req.ip,
         userAgent: req.useragent,
+        ref: req.headers.referer,
       });
       pageview.save();
 
@@ -65,9 +67,21 @@ exports.getLink = async (req, res, next) => {
 exports.createPub = async (req, res, next) => {
   try {
     logger.info(req);
-    const { uri, sLink } = req.body; // i instead of l for uri in req.body
-    // TODO: Setup if statements to check if youtube, twitter, facebook,
-    // video, etc. or default to `website`
+    // eslint-disable-next-line prefer-const
+    let { uri, sLink } = req.body; // i instead of l for uri in req.body
+
+    if (!/^https?:\/\//i.test(uri)) {
+      uri = `https://${uri}`;
+    }
+
+    const reqUrl = `https://pv6yqn1z8b.execute-api.us-east-1.amazonaws.com/dev/getTitle?uri=${uri}`;
+    console.log('url is: ', reqUrl);
+    // Get page title from given URL (AWS Lambda)
+    const resp = await axios.get(reqUrl);
+    const pageTitle = resp.data;
+
+    console.log('pageTitle is: ', pageTitle);
+
     // TODO: CHECK IF USER HAS CREATED A SHORTLINK FOR URI already
     if (await Link.checkDuplicateShortLink(sLink)) {
       res.status(httpStatus.BAD_REQUEST);
@@ -79,12 +93,15 @@ exports.createPub = async (req, res, next) => {
       } else {
         shortLink = await Link.generateShortLink(uri);
       }
+      // TODO: Setup if statements to check if youtube, twitter, facebook,
+      // video, etc. or default to `website`
       const linkType = 'website';
 
       const link = new Link({
         url: uri,
         type: linkType,
         shortLink,
+        pageTitle,
       });
 
       const savedLink = await link.save();
@@ -103,11 +120,26 @@ exports.createPub = async (req, res, next) => {
 exports.create = async (req, res, next) => {
   try {
     logger.info(req);
-    const { uri, sLink } = req.body; // i instead of l for uri in req.body
-    // TODO: Setup if statements to check if youtube, twitter, facebook,
-    // video, etc. or default to `website`
+    // eslint-disable-next-line prefer-const
+    let { uri, sLink } = req.body; // i instead of l for uri in req.body
+
+    if (!/^https?:\/\//i.test(uri)) {
+      uri = `https://${uri}`;
+      console.log('uri changed: ', uri);
+    }
+
     // TODO: CHECK IF USER HAS CREATED A SHORTLINK FOR URI already
     const dupCheck = await Link.checkDuplicateShortLink(sLink);
+    const reqUrl = `https://pv6yqn1z8b.execute-api.us-east-1.amazonaws.com/dev/getTitle?uri=${uri}`;
+    console.log('url is: ', reqUrl);
+
+    // Get page title from given URL (AWS Lambda)
+    const resp = await axios.get(reqUrl);
+    const pageTitle = resp.data;
+
+    console.log('resp is: ', resp);
+    await console.log('pageTitle is: ', pageTitle);
+
     if (dupCheck && sLink !== null) {
       res.status(httpStatus.BAD_REQUEST);
       res.json({ error: 'Short link already exists' });
@@ -118,6 +150,8 @@ exports.create = async (req, res, next) => {
       } else {
         shortLink = await Link.generateShortLink(uri);
       }
+      // TODO: Setup if statements to check if youtube, twitter, facebook,
+      // video, etc. or default to `website`
       const linkType = 'website';
 
       const link = new Link({
@@ -125,6 +159,7 @@ exports.create = async (req, res, next) => {
         url: uri,
         type: linkType,
         shortLink,
+        pageTitle,
       });
 
       const savedLink = await link.save();
@@ -158,6 +193,16 @@ exports.update = (req, res, next) => {
 /**
  * Get link list of all links
  * @public
+ * {
+ *   url,
+ *   createdAt,
+ *   type,
+ *   creatorId,
+ *   numClicks,
+ *   popLocation,
+ *   referrer,
+ *   lastClick,
+ * }
  */
 exports.list = async (req, res, next) => {
   // TODO: Write user check using req.user to see if user is admin or what links or what
@@ -165,6 +210,31 @@ exports.list = async (req, res, next) => {
   try {
     const links = await Link.list(req.query);
     const transformedLinks = links.map(link => link.transform());
+    // '_id','creatorId', 'url', 'type', 'shortLink', 'pageTitle', 'createdAt', 'updatedAt'
+
+    // TODO: Iterate through transformedLinks and get numClicks,
+    // popLocation, referrer (most popular referrer), lastClick (time/date)
+    // eslint-disable-next-line no-restricted-syntax
+    Promise.all(transformedLinks.map(async (link) => {
+      link.numClicks = await PageView.count({ linkId: link._id });
+      link.popLocation = await PageView.aggregate([{
+        $unwind: '$location',
+      }, {
+        $group: { _id: '$location.region', count: { $sum: 1 } },
+      }, {
+        $sort: { count: -1 },
+      }, {
+        $limit: 1,
+      }]);
+      link.referrer = await PageView.aggregate([{
+        $group: { _id: 'ref', count: { $sum: 1 } },
+      }, {
+        $sort: { count: -1 },
+      }, {
+        $limit: 1,
+      }]);
+    }));
+
     res.json(transformedLinks);
   } catch (error) {
     next(error);

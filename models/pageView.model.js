@@ -11,6 +11,9 @@ const pageViewSchema = new mongoose.Schema({
     ref: 'Link',
     required: true,
   },
+  ref: {
+    type: String,
+  },
   ip: {
     type: String,
     required: true,

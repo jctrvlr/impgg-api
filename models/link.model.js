@@ -16,6 +16,7 @@ const linkSchema = new mongoose.Schema({
     type: String,
     match: /((([A-Za-z]{3,9}:(?:\/\/)?)(?:[-;:&=+$,\w]+@)?[A-Za-z0-9.-]+|(?:www\.|[-;:&=+$,\w]+@)[A-Za-z0-9.-]+)((?:\/[+~%/.\w\-_]*)?\??(?:[-+=&;%@.\w_]*)#?(?:[.!/\\\w]*))?)/,
   },
+  pageTitle: { type: String },
   type: {
     type: String,
     default: 'website',
@@ -37,6 +38,7 @@ const linkSchema = new mongoose.Schema({
 linkSchema.pre('save', async (next) => {
   try {
     // TODO: Generate short link if not given here -- Or not in save but somewhere else
+    // TODO: Get page title here
     return next();
   } catch (error) {
     return next(error);
@@ -49,7 +51,7 @@ linkSchema.pre('save', async (next) => {
 linkSchema.method({
   transform() {
     const transformed = {};
-    const fields = ['creatorId', 'url', 'type', 'shortLink'];
+    const fields = ['_id', 'creatorId', 'url', 'type', 'shortLink', 'pageTitle', 'createdAt', 'updatedAt'];
 
     fields.forEach((field) => {
       transformed[field] = this[field];
