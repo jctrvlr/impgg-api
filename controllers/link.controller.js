@@ -1,6 +1,7 @@
 /* eslint-disable no-param-reassign */
 const httpStatus = require('http-status');
 const axios = require('axios');
+const cheerio = require('cheerio');
 const Link = require('../models/link.model');
 // const User = require('../models/user.model');
 const logger = require('../config/logger');
@@ -113,6 +114,11 @@ exports.createPub = async (req, res, next) => {
   }
 };
 
+const fetchData = async (siteUrl) => {
+  const result = await axios.get(siteUrl);
+  return cheerio.load(result.data);
+};
+
 /**
  * Create new link with auth
  * @public
@@ -130,15 +136,20 @@ exports.create = async (req, res, next) => {
 
     // TODO: CHECK IF USER HAS CREATED A SHORTLINK FOR URI already
     const dupCheck = await Link.checkDuplicateShortLink(sLink);
-    const reqUrl = `https://pv6yqn1z8b.execute-api.us-east-1.amazonaws.com/dev/getTitle?uri=${uri}`;
-    console.log('url is: ', reqUrl);
 
-    // Get page title from given URL (AWS Lambda)
-    const resp = await axios.get(reqUrl);
-    const pageTitle = resp.data;
+    const siteUrl = uri;
+    let pageTitle = '';
 
-    console.log('resp is: ', resp);
-    await console.log('pageTitle is: ', pageTitle);
+    try {
+      if (siteUrl) {
+        const $ = await fetchData(siteUrl);
+        pageTitle = $('head > title').text();
+      }
+    } catch (err) {
+      console.log(err);
+    }
+
+    console.log('pageTitle is: ', pageTitle);
 
     if (dupCheck && sLink !== null) {
       res.status(httpStatus.BAD_REQUEST);
@@ -167,6 +178,7 @@ exports.create = async (req, res, next) => {
       res.json(savedLink.transform());
     }
   } catch (error) {
+    console.log(error);
     next(error);
   }
 };
@@ -208,6 +220,7 @@ exports.list = async (req, res, next) => {
   // TODO: Write user check using req.user to see if user is admin or what links or what
   // links the user should have access too
   try {
+    console.log('inside list');
     const links = await Link.list(req.query);
     const transformedLinks = links.map(link => link.transform());
     // '_id','creatorId', 'url', 'type', 'shortLink', 'pageTitle', 'createdAt', 'updatedAt'
@@ -226,16 +239,20 @@ exports.list = async (req, res, next) => {
       }, {
         $limit: 1,
       }]);
+      link.popLocation = link.popLocation[0].count;
       link.referrer = await PageView.aggregate([{
-        $group: { _id: 'ref', count: { $sum: 1 } },
+        $group: { _id: '$ref' },
       }, {
         $sort: { count: -1 },
       }, {
         $limit: 1,
       }]);
-    }));
-
-    res.json(transformedLinks);
+      link.referrer = link.referrer[0]._id;
+      link.lastClick = await PageView.findOne({}, {}, { sort: { created_at: -1 } });
+      return link;
+    })).then((ret) => {
+      res.json(ret);
+    });
   } catch (error) {
     next(error);
   }
