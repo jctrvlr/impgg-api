@@ -225,30 +225,31 @@ exports.list = async (req, res, next) => {
     const transformedLinks = links.map(link => link.transform());
     // '_id','creatorId', 'url', 'type', 'shortLink', 'pageTitle', 'createdAt', 'updatedAt'
 
-    // TODO: Iterate through transformedLinks and get numClicks,
-    // popLocation, referrer (most popular referrer), lastClick (time/date)
+    // TODO: Fix popLocation query so that it returns the region not count
     // eslint-disable-next-line no-restricted-syntax
     Promise.all(transformedLinks.map(async (link) => {
       link.numClicks = await PageView.count({ linkId: link._id });
       link.popLocation = await PageView.aggregate([{
+        $match: { linkId: link._id },
+      }, {
         $unwind: '$location',
       }, {
         $group: { _id: '$location.region', count: { $sum: 1 } },
       }, {
         $sort: { count: -1 },
-      }, {
-        $limit: 1,
       }]);
-      link.popLocation = link.popLocation[0].count;
       link.referrer = await PageView.aggregate([{
-        $group: { _id: '$ref' },
+        $match: { linkId: link._id },
+      }, {
+        $group: { _id: '$ref', count: { $sum: 1 } },
       }, {
         $sort: { count: -1 },
-      }, {
-        $limit: 1,
       }]);
-      link.referrer = link.referrer[0]._id;
-      link.lastClick = await PageView.findOne({}, {}, { sort: { created_at: -1 } });
+      link.lastClick = await PageView.findOne({
+        linkId: link._id,
+      }, {}, {
+        sort: { created_at: -1 },
+      });
       return link;
     })).then((ret) => {
       res.json(ret);
