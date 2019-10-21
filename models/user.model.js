@@ -14,6 +14,11 @@ const { env, jwtSecret, jwtExpirationInterval } = require('../config/vars');
 const roles = ['user', 'admin'];
 
 /**
+ * Subscription Types
+ */
+const subscriptions = ['personal', 'pro', 'enterprise', 'admin'];
+
+/**
  * User Schema
  * @private
  */
@@ -46,8 +51,54 @@ const userSchema = new mongoose.Schema({
       trim: true,
     },
   },
+
+  preferences: {
+    primaryDomain: {
+      type: String,
+      trim: true,
+      default: 'http://imp.gg',
+    },
+  },
   // TODO: SETUP SETTINGS FOR NOTIFCATIONS/ETC
   // TODO: SETUP PAYMENT OPTIONS/SETTINGS
+
+  /**
+   * Array of registered and usable domains
+   *
+   * Domain: {uri, status (Number: -1 - notworking but used to,
+   * 0 - Added but not setup, 1 - Setup but not ready, 2 - setup and ready), dateAdded}
+   */
+  domains: {
+    type: [{
+      uri: String,
+      status: Number,
+      dateAdded: Date,
+    }],
+    default: [{
+      uri: 'https://imp.gg',
+      status: 2,
+    }],
+  },
+
+  subscription: {
+    subType: {
+      type: String,
+      enum: subscriptions,
+    },
+    status: String,
+    transactionId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Transaction',
+    },
+    startTimestamp: {
+      type: Date,
+      default: Date.now,
+    },
+    endTimestamp: {
+      type: Date,
+    },
+  },
+
   services: {
     facebook: String,
     google: String,
@@ -90,7 +141,7 @@ userSchema.pre('save', async function save(next) {
 userSchema.method({
   transform() {
     const transformed = {};
-    const fields = ['id', 'name', 'email', 'picture', 'role', 'createdAt'];
+    const fields = ['id', 'name', 'email', 'picture', 'role', 'domains', 'subscription', 'createdAt', 'preferences'];
 
     fields.forEach((field) => {
       transformed[field] = this[field];
