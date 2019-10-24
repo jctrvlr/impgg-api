@@ -51,10 +51,32 @@ exports.getLink = async (req, res, next) => {
     const link = await Link.findByShort(linkId);
 
     if (link) {
+      res.status(httpStatus.OK);
       res.json(link.transform());
     } else {
       res.status(httpStatus.NOT_FOUND);
       res.json({ error: 'Link cannot be found' });
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Check shortLink uniqueness
+ * @public
+ */
+exports.checkShortLink = async (req, res, next) => {
+  try {
+    const { sLink } = req.body;
+    const checkDup = await Link.checkDuplicateShortLink(sLink);
+    console.log('checkdup: ', checkDup);
+    if (!checkDup) {
+      res.status(httpStatus.OK);
+      res.json({ checkDup: false });
+    } else {
+      res.status(httpStatus.OK);
+      res.json(checkDup);
     }
   } catch (error) {
     next(error);
@@ -75,11 +97,17 @@ exports.createPub = async (req, res, next) => {
       uri = `https://${uri}`;
     }
 
-    const reqUrl = `https://pv6yqn1z8b.execute-api.us-east-1.amazonaws.com/dev/getTitle?uri=${uri}`;
-    console.log('url is: ', reqUrl);
-    // Get page title from given URL (AWS Lambda)
-    const resp = await axios.get(reqUrl);
-    const pageTitle = resp.data;
+    const siteUrl = uri;
+    let pageTitle = '';
+
+    try {
+      if (siteUrl) {
+        const $ = await fetchData(siteUrl);
+        pageTitle = $('head > title').text();
+      }
+    } catch (err) {
+      console.log(err);
+    }
 
     console.log('pageTitle is: ', pageTitle);
 
@@ -125,9 +153,8 @@ const fetchData = async (siteUrl) => {
  */
 exports.create = async (req, res, next) => {
   try {
-    logger.info(req);
     // eslint-disable-next-line prefer-const
-    let { uri, sLink } = req.body; // i instead of l for uri in req.body
+    let { uri, sLink, linkDomain } = req.body; // i instead of l for uri in req.body
 
     if (!/^https?:\/\//i.test(uri)) {
       uri = `https://${uri}`;
@@ -135,7 +162,8 @@ exports.create = async (req, res, next) => {
     }
 
     // TODO: CHECK IF USER HAS CREATED A SHORTLINK FOR URI already
-    const dupCheck = await Link.checkDuplicateShortLink(sLink);
+    await Link.checkUserDuplicate(req.user._id, uri, sLink, linkDomain);
+    await Link.checkDuplicateShortLink(sLink);
 
     const siteUrl = uri;
     let pageTitle = '';
@@ -150,35 +178,29 @@ exports.create = async (req, res, next) => {
     }
 
     console.log('pageTitle is: ', pageTitle);
-
-    if (dupCheck && sLink !== null) {
-      res.status(httpStatus.BAD_REQUEST);
-      res.json({ error: 'Short link already exists' });
+    let shortLink = '';
+    if (sLink) {
+      shortLink = sLink;
     } else {
-      let shortLink = '';
-      if (sLink) {
-        shortLink = sLink;
-      } else {
-        shortLink = await Link.generateShortLink(uri);
-      }
-      // TODO: Setup if statements to check if youtube, twitter, facebook,
-      // video, etc. or default to `website`
-      const linkType = 'website';
-
-      const link = new Link({
-        creatorId: req.user._id,
-        url: uri,
-        type: linkType,
-        shortLink,
-        pageTitle,
-      });
-
-      const savedLink = await link.save();
-      res.status(httpStatus.CREATED);
-      res.json(savedLink.transform());
+      shortLink = await Link.generateShortLink(uri);
     }
+    // TODO: Setup if statements to check if youtube, twitter, facebook,
+    // video, etc. or default to `website`
+    const linkType = 'website';
+
+    const link = new Link({
+      creatorId: req.user._id,
+      url: uri,
+      type: linkType,
+      domain: linkDomain,
+      shortLink,
+      pageTitle,
+    });
+
+    const savedLink = await link.save();
+    res.status(httpStatus.CREATED);
+    res.json(savedLink.transform());
   } catch (error) {
-    console.log(error);
     next(error);
   }
 };

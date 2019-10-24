@@ -56,7 +56,7 @@ const userSchema = new mongoose.Schema({
     primaryDomain: {
       type: String,
       trim: true,
-      default: 'http://imp.gg',
+      default: 'https://imp.gg',
     },
   },
   // TODO: SETUP SETTINGS FOR NOTIFCATIONS/ETC

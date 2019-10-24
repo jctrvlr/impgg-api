@@ -16,6 +16,10 @@ const linkSchema = new mongoose.Schema({
     type: String,
     match: /((([A-Za-z]{3,9}:(?:\/\/)?)(?:[-;:&=+$,\w]+@)?[A-Za-z0-9.-]+|(?:www\.|[-;:&=+$,\w]+@)[A-Za-z0-9.-]+)((?:\/[+~%/.\w\-_]*)?\??(?:[-+=&;%@.\w_]*)#?(?:[.!/\\\w]*))?)/,
   },
+  domain: {
+    type: String,
+    default: 'https://imp.gg',
+  },
   pageTitle: { type: String },
   type: {
     type: String,
@@ -134,11 +138,49 @@ linkSchema.statics = {
    * @returns {Boolean}
    */
   async checkDuplicateShortLink(sLink) {
-    this.findOne({ shortLink: sLink }, (err, link) => {
+    try {
+      const link = await this.findOne({ shortLink: sLink }).exec();
       console.log(link);
-      if (link !== null) return true;
+      if (link !== null) {
+        return new APIError({
+          message: 'Short link already exists',
+          status: httpStatus.CONFLICT,
+          isPublic: true,
+        });
+      }
       return false;
-    });
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
+   * Check for duplicate link for same user with same domain
+   *
+   * @param {String} userId - User ID of user creating link
+   * @param {String} uri - URI of link to be created for
+   * @param {String} sLink - Given shortLink for link
+   * @param {String} domain - Given domain for link
+   * @returns {Boolean} True if link exists false if it doesn't
+   */
+  async checkUserDuplicate(userId, uri, sLink, domain) {
+    try {
+      const link = await this.findOne({
+        creatorId: userId,
+        url: uri,
+        $or: [{ shortLink: sLink }, { domain }],
+      }).exec();
+      if (link !== null) {
+        throw new APIError({
+          message: 'Shortened link for this URL exists for user',
+          status: httpStatus.CONFLICT,
+          isPublic: true,
+        });
+      }
+      return false;
+    } catch (error) {
+      throw error;
+    }
   },
 
   /**

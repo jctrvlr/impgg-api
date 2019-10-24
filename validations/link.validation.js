@@ -13,12 +13,19 @@ module.exports = {
       linkId: Joi.string().required(),
     },
   },
+  // POST /slink
+  checkSlink: {
+    body: {
+      sLink: Joi.string().required(),
+    },
+  },
   // POST /link
   createLink: {
     body: {
       CreatorId: Joi.string(),
       uri: Joi.string().required().trim(),
-      sLink: Joi.string().trim(),
+      sLink: Joi.string().trim().allow('', null),
+      linkDomain: Joi.string().trim().allow('', null),
     },
     params: {
       userId: Joi.string().regex(/^[a-fA-F0-9]{24}$/),
