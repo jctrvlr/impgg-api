@@ -13,5 +13,9 @@ module.exports = {
   mongo: {
     uri: process.env.NODE_ENV === 'test' ? process.env.MONGO_URI_TESTS : process.env.MONGO_URI,
   },
+  redis: {
+    host: process.env.NODE_ENV === 'test' ? process.env.REDIS_URI_TESTS : process.env.REDIS_URI,
+    port: process.env.NODE_ENV === 'test' ? process.env.REDIS_PORT_TESTS : process.env.REDIS_PORT,
+  },
   logs: process.env.NODE_ENV === 'production' ? 'combined' : 'dev',
 };
