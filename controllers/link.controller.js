@@ -242,41 +242,49 @@ exports.list = async (req, res, next) => {
   // TODO: Write user check using req.user to see if user is admin or what links or what
   // links the user should have access too
   try {
-    console.log('inside list');
     const links = await Link.list(req.query);
-    const transformedLinks = links.map(link => link.transform());
-    // '_id','creatorId', 'url', 'type', 'shortLink', 'pageTitle', 'createdAt', 'updatedAt'
+    console.log('links here', links);
+    if (!links.length) {
+      res.status(httpStatus.NO_CONTENT);
+      res.json(links);
+    } else {
+      const transformedLinks = links.map(link => link.transform());
+      // '_id','creatorId', 'url', 'type', 'shortLink', 'pageTitle', 'createdAt', 'updatedAt'
+      console.log(transformedLinks);
 
-    // TODO: Fix popLocation query so that it returns the region not count
-    // eslint-disable-next-line no-restricted-syntax
-    Promise.all(transformedLinks.map(async (link) => {
-      link.numClicks = await PageView.count({ linkId: link._id });
-      link.popLocation = await PageView.aggregate([{
-        $match: { linkId: link._id },
-      }, {
-        $unwind: '$location',
-      }, {
-        $group: { _id: '$location.region', count: { $sum: 1 } },
-      }, {
-        $sort: { count: -1 },
-      }]);
-      link.referrer = await PageView.aggregate([{
-        $match: { linkId: link._id },
-      }, {
-        $group: { _id: '$ref', count: { $sum: 1 } },
-      }, {
-        $sort: { count: -1 },
-      }]);
-      link.lastClick = await PageView.findOne({
-        linkId: link._id,
-      }, {}, {
-        sort: { created_at: -1 },
+      // TODO: Fix popLocation query so that it returns the region not count
+      // eslint-disable-next-line no-restricted-syntax
+      Promise.all(transformedLinks.map(async (link) => {
+        link.numClicks = await PageView.count({ linkId: link._id });
+        link.popLocation = await PageView.aggregate([{
+          $match: { linkId: link._id },
+        }, {
+          $unwind: '$location',
+        }, {
+          $group: { _id: '$location.region', count: { $sum: 1 } },
+        }, {
+          $sort: { count: -1 },
+        }]);
+        link.referrer = await PageView.aggregate([{
+          $match: { linkId: link._id },
+        }, {
+          $group: { _id: '$ref', count: { $sum: 1 } },
+        }, {
+          $sort: { count: -1 },
+        }]);
+        link.lastClick = await PageView.findOne({
+          linkId: link._id,
+        }, {}, {
+          sort: { created_at: -1 },
+        });
+        return link;
+      })).then((ret) => {
+        res.status(httpStatus.OK);
+        res.json(ret);
       });
-      return link;
-    })).then((ret) => {
-      res.json(ret);
-    });
+    }
   } catch (error) {
+    console.log('error', error);
     next(error);
   }
 };
