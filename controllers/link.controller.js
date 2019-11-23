@@ -211,13 +211,13 @@ exports.create = async (req, res, next) => {
  */
 exports.update = (req, res, next) => {
   const {
-    CreatorId, uri, oldSLink, newSLink,
+    uri, linkId, sLink, domain,
   } = req.body;
-  const link = Link.findByShort(oldSLink)
+  const link = Link.findOne({ _id: linkId })
     .then((_link) => {
-      _link.creatorId = CreatorId;
-      _link.url = uri;
-      _link.shortLink = newSLink;
+      if (uri) _link.url = uri;
+      if (sLink) _link.shortLink = sLink;
+      if (domain) _link.domain = domain;
       return _link.save();
     });
 

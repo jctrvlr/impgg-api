@@ -55,7 +55,7 @@ linkSchema.pre('save', async (next) => {
 linkSchema.method({
   transform() {
     const transformed = {};
-    const fields = ['_id', 'creatorId', 'url', 'type', 'shortLink', 'pageTitle', 'createdAt', 'updatedAt'];
+    const fields = ['_id', 'creatorId', 'url', 'domain', 'type', 'shortLink', 'pageTitle', 'createdAt', 'updatedAt'];
 
     fields.forEach((field) => {
       transformed[field] = this[field];
