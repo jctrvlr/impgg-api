@@ -31,13 +31,13 @@ module.exports = {
       userId: Joi.string().regex(/^[a-fA-F0-9]{24}$/),
     },
   },
-  // PUT /link
+  // PUT
   updateLink: {
     body: {
-      oldSLink: Joi.string().required(),
-      CreatorId: Joi.string(),
-      uri: Joi.string().uri(),
-      newSLink: Joi.string(),
+      uri: Joi.string().uri().allow('', null),
+      linkId: Joi.string().required(),
+      sLink: Joi.string().allow('', null),
+      domain: Joi.string().allow('', null),
     },
     params: {
       userId: Joi.string().regex(/^[a-fA-F0-9]{24}$/),

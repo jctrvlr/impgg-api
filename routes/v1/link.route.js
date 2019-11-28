@@ -87,10 +87,10 @@ router
    *
    * @apiHeader {String} Authorization   User's access token
    *
-   * @apiParam {String}    [oldSLink]     oldSLink
-   * @apiParam {String}    [CreatorId]    CreatorId
-   * @apiParam {String}    [uri]          uri
-   * @apiParam {String}    [newSLink]     newSLink
+   * @apiParam {String}    [uri]        uri
+   * @apiParam {String}    [linkId]     linkId
+   * @apiParam {String}    [sLink]      sLink
+   * @apiParam {String}    [domain]     domain
    *
    * @apiSuccess (Created 201) {String} creatorId
    * @apiSuccess (Created 201) {String} url

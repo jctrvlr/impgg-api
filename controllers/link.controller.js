@@ -213,15 +213,18 @@ exports.update = (req, res, next) => {
   const {
     uri, linkId, sLink, domain,
   } = req.body;
-  const link = Link.findOne({ _id: linkId })
+  console.log(req.body);
+  Link.findOne({ _id: linkId })
     .then((_link) => {
       if (uri) _link.url = uri;
       if (sLink) _link.shortLink = sLink;
       if (domain) _link.domain = domain;
       return _link.save();
+    })
+    .then((_link) => {
+      res.status(httpStatus.OK);
+      res.json(_link.transform());
     });
-
-  res.json(link.transform());
 };
 
 /**
