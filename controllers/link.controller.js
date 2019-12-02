@@ -6,6 +6,7 @@ const Link = require('../models/link.model');
 // const User = require('../models/user.model');
 const logger = require('../config/logger');
 const PageView = require('../models/pageView.model');
+const APIError = require('../utils/APIError');
 
 /**
  * Get Link and redirect + pageview
@@ -209,22 +210,38 @@ exports.create = async (req, res, next) => {
  * Update existing link
  * @public
  */
-exports.update = (req, res, next) => {
-  const {
-    uri, linkId, sLink, domain,
-  } = req.body;
-  console.log(req.body);
-  Link.findOne({ _id: linkId })
-    .then((_link) => {
-      if (uri) _link.url = uri;
-      if (sLink) _link.shortLink = sLink;
-      if (domain) _link.domain = domain;
-      return _link.save();
-    })
-    .then((_link) => {
-      res.status(httpStatus.OK);
-      res.json(_link.transform());
-    });
+exports.update = async (req, res, next) => {
+  try {
+    const {
+      uri, linkId, sLink, domain,
+    } = req.body;
+
+    await Link.checkUserDuplicate(req.user._id, uri, sLink, domain);
+    await Link.checkDuplicateShortLink(sLink);
+
+    console.log(req.body);
+    Link.findOne({ _id: linkId })
+      .then((_link) => {
+        if (uri) _link.url = uri;
+        if (sLink) _link.shortLink = sLink;
+        if (domain) _link.domain = domain;
+        return _link.save();
+      })
+      .then((_link) => {
+        res.status(httpStatus.OK);
+        res.json(_link.transform());
+      })
+      .catch((err) => {
+        console.log(err);
+        next(new APIError({
+          message: 'Short link already exists',
+          status: httpStatus.CONFLICT,
+          isPublic: true,
+        }));
+      });
+  } catch (error) {
+    next(error);
+  }
 };
 
 /**
