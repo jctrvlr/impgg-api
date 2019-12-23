@@ -18,10 +18,20 @@ exports.get = async (req, res, next) => {
     const link = await Link.findByShort(linkId);
 
     if (link) {
+      // TODO: Parse referer and save what social site it came from
+      let device;
+      if (req.useragent.isDesktop) {
+        device = 'Desktop';
+      } else if (req.useragent.isMobile) {
+        device = 'Mobile';
+      } else {
+        device = 'Other';
+      }
       const pageview = new PageView({
         linkId: link._id,
         ip: req.ip,
         userAgent: req.useragent,
+        device,
         ref: req.headers.referer,
       });
       pageview.save();
@@ -109,8 +119,6 @@ exports.createPub = async (req, res, next) => {
     } catch (err) {
       console.log(err);
     }
-
-    console.log('pageTitle is: ', pageTitle);
 
     // TODO: CHECK IF USER HAS CREATED A SHORTLINK FOR URI already
     if (await Link.checkDuplicateShortLink(sLink)) {
@@ -276,22 +284,6 @@ exports.list = async (req, res, next) => {
       // eslint-disable-next-line no-restricted-syntax
       Promise.all(transformedLinks.map(async (link) => {
         link.numClicks = await PageView.count({ linkId: link._id });
-        link.popLocation = await PageView.aggregate([{
-          $match: { linkId: link._id },
-        }, {
-          $unwind: '$location',
-        }, {
-          $group: { _id: '$location.region', count: { $sum: 1 } },
-        }, {
-          $sort: { count: -1 },
-        }]);
-        link.referrer = await PageView.aggregate([{
-          $match: { linkId: link._id },
-        }, {
-          $group: { _id: '$ref', count: { $sum: 1 } },
-        }, {
-          $sort: { count: -1 },
-        }]);
         link.lastClick = await PageView.findOne({
           linkId: link._id,
         }, {}, {

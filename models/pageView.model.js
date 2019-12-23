@@ -22,6 +22,9 @@ const pageViewSchema = new mongoose.Schema({
     type: Object,
     required: true,
   },
+  device: {
+
+  },
   location: {
     hostname: {
       type: String,
