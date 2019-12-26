@@ -24,7 +24,7 @@ exports.getLinkInfo = async (req, res, next) => {
   // TODO: Write user check using req.user to see if user is admin or what links or what
   // links the user should have access too
   try {
-    const links = await Link.list(req.query);
+    const links = await Link.find({ _id: req.params.linkId }).limit(1);
     if (!links.length) {
       logger.debug(`Link not found - query: ${req.query}`);
       res.status(httpStatus.NO_CONTENT);
