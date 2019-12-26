@@ -6,6 +6,7 @@ const {
   createLink,
   getLinkInfo,
   updateLink,
+  checkSlink,
 } = require('../../validations/link.validation');
 
 const router = express.Router();
@@ -14,7 +15,7 @@ router
   .route('/link/:linkId')
   /**
    * @api {get} v1/link Get link info
-   * @apiDescription Get a link and redirects to given
+   * @apiDescription Get a link's info
    * @apiVersion 1.0.0
    * @apiName Get Link
    * @apiGroup Link
@@ -24,14 +25,32 @@ router
    *
    * @apiParam {String}    [linkId]    linkId
    *
-   * @apiSuccess (Created 201) {String} creatorId
-   * @apiSuccess (Created 201) {String} url
-   * @apiSuccess (Created 201) {String} type
-   * @apiSuccess (Created 201) {String} shortLink
+   * @apiSuccess (OK 200) {String} creatorId
+   * @apiSuccess (OK 200) {String} url
+   * @apiSuccess (OK 200) {String} type
+   * @apiSuccess (OK 200) {String} shortLink
    *
    * @apiError (Bad Request 400)  ValidationError Some parameters may contain invalid values
    */
   .get(authorize(LOGGED_USER), validate(getLinkInfo), controller.getLink);
+
+router
+  .route('/slink')
+  /**
+   * @api {post} v1/slink Check for shortlink duplicate
+   * @apiDescription Check for shortlink duplicate
+   * @apiVersion 1.0.0
+   * @apiName Check shortlink
+   * @apiGroup Link
+   * @apiPermission public
+   *
+   * @apiHeader {String} Authorization   User's access token
+   *
+   * @apiParam {String}    [sLink]    sLink
+   *
+   * @apiSuccess (OK 200) {Boolean} checkDup
+   */
+  .post(authorize(LOGGED_USER), validate(checkSlink), controller.checkShortLink);
 
 router
   .route('/')
@@ -68,10 +87,10 @@ router
    *
    * @apiHeader {String} Authorization   User's access token
    *
-   * @apiParam {String}    [oldSLink]     oldSLink
-   * @apiParam {String}    [CreatorId]    CreatorId
-   * @apiParam {String}    [uri]          uri
-   * @apiParam {String}    [newSLink]     newSLink
+   * @apiParam {String}    [uri]        uri
+   * @apiParam {String}    [linkId]     linkId
+   * @apiParam {String}    [sLink]      sLink
+   * @apiParam {String}    [domain]     domain
    *
    * @apiSuccess (Created 201) {String} creatorId
    * @apiSuccess (Created 201) {String} url

@@ -13,24 +13,31 @@ module.exports = {
       linkId: Joi.string().required(),
     },
   },
+  // POST /slink
+  checkSlink: {
+    body: {
+      sLink: Joi.string().required(),
+    },
+  },
   // POST /link
   createLink: {
     body: {
       CreatorId: Joi.string(),
       uri: Joi.string().required().trim(),
-      sLink: Joi.string().trim(),
+      sLink: Joi.string().trim().allow('', null),
+      linkDomain: Joi.string().trim().allow('', null),
     },
     params: {
       userId: Joi.string().regex(/^[a-fA-F0-9]{24}$/),
     },
   },
-  // PUT /link
+  // PUT
   updateLink: {
     body: {
-      oldSLink: Joi.string().required(),
-      CreatorId: Joi.string(),
-      uri: Joi.string().uri(),
-      newSLink: Joi.string(),
+      uri: Joi.string().uri().allow('', null),
+      linkId: Joi.string().required(),
+      sLink: Joi.string().allow('', null),
+      domain: Joi.string().allow('', null),
     },
     params: {
       userId: Joi.string().regex(/^[a-fA-F0-9]{24}$/),
