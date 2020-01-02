@@ -99,12 +99,14 @@ linkSchema.statics = {
   async generateShortLink() {
     try {
       // TODO: Generate link using url
-      const shortLink = Math.random().toString(36).substr(5, 10);
-      const checkDup = await this.checkDuplicateShortLink(shortLink);
+      const sLink = Math.random()
+        .toString(36)
+        .substr(7, 10);
+      const checkDup = await this.checkDuplicateShortLink(sLink);
       if (checkDup) {
         this.generateShortLink();
       }
-      return shortLink;
+      return sLink;
     } catch (error) {
       throw error;
     }
