@@ -39,13 +39,18 @@ const userSchema = new mongoose.Schema({
   passwordResetExpires: Date,
 
   profile: {
-    name: {
+    firstName: {
       type: String,
       maxlength: 128,
       index: true,
       trim: true,
     },
-    gender: String,
+    lastName: {
+      type: String,
+      maxlength: 128,
+      index: true,
+      trim: true,
+    },
     picture: {
       type: String,
       trim: true,
@@ -141,7 +146,7 @@ userSchema.pre('save', async function save(next) {
 userSchema.method({
   transform() {
     const transformed = {};
-    const fields = ['id', 'name', 'email', 'picture', 'role', 'domains', 'subscription', 'createdAt', 'preferences'];
+    const fields = ['id', 'email', 'profile', 'role', 'domains', 'subscription', 'createdAt', 'preferences'];
 
     fields.forEach((field) => {
       transformed[field] = this[field];

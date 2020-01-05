@@ -151,7 +151,9 @@ router
    *
    * @apiParam  {String}             email     User's email
    * @apiParam  {String{6..128}}     password  User's password
-   * @apiParam  {String{..128}}      [name]    User's name
+   * @apiParam  {String{..128}}      [profile.name]    User's name
+   * @apiParam  {String{..128}}      [profile.picture]    User's picture
+   * @apiParam  {String{..128}}      [preferences.primaryDomain]    Primary Domain Preference
    * @apiParam  {String=user,admin}  [role]    User's role
    * (You must be an admin to change the user's role)
    *

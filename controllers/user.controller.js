@@ -68,8 +68,9 @@ exports.replace = async (req, res, next) => {
  * @public
  */
 exports.update = (req, res, next) => {
-  const ommitRole = req.locals.user.role !== 'admin' ? 'role' : '';
-  const updatedUser = omit(req.body, ommitRole);
+  const omitThings = ['domains', 'subscription', 'services', 'tokens'];
+  if (req.locals.user.role !== 'admin') omitThings.push('role');
+  const updatedUser = omit(req.body, omitThings);
   const user = Object.assign(req.locals.user, updatedUser);
 
   user.save()
