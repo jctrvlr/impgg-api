@@ -87,6 +87,25 @@ router
    */
   .get(authorize(), controller.loggedIn);
 
+router
+  .route('/profile/picture')
+  /**
+   * @api {patch} v1/users/profile/picture Delete User
+   * @apiDescription Delete profile picture
+   * @apiVersion 1.0.0
+   * @apiName DeletePicture
+   * @apiGroup User
+   * @apiPermission user
+   *
+   * @apiHeader {String} Authorization   User's access token
+   *
+   * @apiSuccess (No Content 204)  Successfully deleted
+   *
+   * @apiError (Unauthorized 401) Unauthorized  Only authenticated users can delete the data
+   * @apiError (Forbidden 403)    Forbidden     Only user with same id or admins can delete the data
+   * @apiError (Not Found 404)    NotFound      User does not exist
+   */
+  .delete(authorize(LOGGED_USER), controller.removePicture);
 
 router
   .route('/:userId')
@@ -112,7 +131,7 @@ router
    */
   .get(authorize(LOGGED_USER), controller.get)
   /**
-   * @api {put} v1/users/:id Replace User
+   * @api {put} v1/users/:userId Replace User
    * @apiDescription Replace the whole user document with a new one
    * @apiVersion 1.0.0
    * @apiName ReplaceUser
@@ -140,7 +159,7 @@ router
    */
   .put(authorize(LOGGED_USER), validate(replaceUser), controller.replace)
   /**
-   * @api {patch} v1/users/:id Update User
+   * @api {patch} v1/users/:userId Update User
    * @apiDescription Update some fields of a user document
    * @apiVersion 1.0.0
    * @apiName UpdateUser
