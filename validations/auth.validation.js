@@ -9,7 +9,7 @@ module.exports = {
     },
   },
 
-  // POST /v1/auth/login
+  // POST /v1/auth/login && /v1/auth
   login: {
     body: {
       email: Joi.string().email().required(),

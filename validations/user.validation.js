@@ -50,4 +50,11 @@ module.exports = {
       userId: Joi.string().regex(/^[a-fA-F0-9]{24}$/).required(),
     },
   },
+
+  // POST /v1/users/:userId/password
+  changePassword: {
+    body: {
+      password: Joi.string().min(6).max(128),
+    },
+  },
 };

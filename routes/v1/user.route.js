@@ -7,6 +7,7 @@ const {
   createUser,
   replaceUser,
   updateUser,
+  changePassword,
 } = require('../../validations/user.validation');
 
 const router = express.Router();
@@ -108,6 +109,26 @@ router
   .delete(authorize(LOGGED_USER), controller.removePicture);
 
 router
+  .route('/password')
+  /**
+   * @api {get} v1/users/password Change user's password
+   * @apiDescription Change user's password
+   * @apiVersion 1.0.0
+   * @apiName ChangePassword
+   * @apiGroup User
+   * @apiPermission user
+   *
+   * @apiHeader {String} Authorization   User's access token
+   *
+   * @apiSuccess {Boolean}  success         Password change successful
+   *
+   * @apiError (Unauthorized 401) Unauthorized Only authenticated users can access the data
+   * @apiError (Forbidden 403)    Forbidden    Only user with same id or admins can access the data
+   * @apiError (Not Found 404)    NotFound     User does not exist
+   */
+  .post(authorize(LOGGED_USER), validate(changePassword), controller.changePassword);
+
+router
   .route('/:userId')
   /**
    * @api {get} v1/users/:id Get User
@@ -118,6 +139,8 @@ router
    * @apiPermission user
    *
    * @apiHeader {String} Authorization   User's access token
+   *
+   * @apiParam  {String{6..128}}     password  User's new password
    *
    * @apiSuccess {String}  id         User's id
    * @apiSuccess {String}  name       User's name

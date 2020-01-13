@@ -80,6 +80,19 @@ exports.update = async (req, res, next) => {
 };
 
 /**
+ * Change existing user's password
+ * @public
+ */
+exports.changePassword = async (req, res, next) => {
+  const { user } = req;
+  const { password } = req.body;
+  user.password = password;
+  user.save()
+    .then(() => res.json(true))
+    .catch(e => next(User.checkDuplicateEmail(e)));
+};
+
+/**
  * Get user list
  * @public
  */
