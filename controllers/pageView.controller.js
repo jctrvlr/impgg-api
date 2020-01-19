@@ -13,7 +13,7 @@ exports.getCountSpecific = async (req, res, next) => {
   try {
     const { linkId } = req.params;
     logger.info('Get count for: ', linkId);
-    const count = await PageView.count({ linkId });
+    const count = await PageView.countDocuments({ linkId });
     res.status(httpStatus.OK);
     res.json(count);
   } catch (error) {

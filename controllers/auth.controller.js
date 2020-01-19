@@ -49,6 +49,20 @@ exports.login = async (req, res, next) => {
 };
 
 /**
+ * Returns jwt token if valid username and password is provided
+ * @public
+ */
+exports.auth = async (req, res, next) => {
+  try {
+    return User.authUser(req.body, req.user)
+      .then(authenticated => res.json(authenticated))
+      .catch(err => next(err));
+  } catch (error) {
+    return next(error);
+  }
+};
+
+/**
  * login with an existing user or creates a new one if valid accessToken token
  * Returns jwt token
  * @public

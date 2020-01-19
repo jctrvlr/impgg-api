@@ -39,13 +39,18 @@ const userSchema = new mongoose.Schema({
   passwordResetExpires: Date,
 
   profile: {
-    name: {
+    firstName: {
       type: String,
       maxlength: 128,
       index: true,
       trim: true,
     },
-    gender: String,
+    lastName: {
+      type: String,
+      maxlength: 128,
+      index: true,
+      trim: true,
+    },
     picture: {
       type: String,
       trim: true,
@@ -141,7 +146,7 @@ userSchema.pre('save', async function save(next) {
 userSchema.method({
   transform() {
     const transformed = {};
-    const fields = ['id', 'name', 'email', 'picture', 'role', 'domains', 'subscription', 'createdAt', 'preferences'];
+    const fields = ['id', 'email', 'profile', 'role', 'domains', 'subscription', 'createdAt', 'preferences'];
 
     fields.forEach((field) => {
       transformed[field] = this[field];
@@ -195,6 +200,36 @@ userSchema.statics = {
     } catch (error) {
       throw error;
     }
+  },
+
+  /**
+   * Auth user
+   *
+   * @param {ObjectId} id - The objectId of user.
+   * @returns {Promise<User, APIError>}
+   */
+  async authUser(options, loggedUser) {
+    const { email, password } = options;
+    if (!email) throw new APIError({ message: 'An email is required' });
+
+    const user = await this.findOne({ email }).exec();
+    const err = {
+      status: httpStatus.UNAUTHORIZED,
+      isPublic: true,
+    };
+    if (JSON.stringify(user._id) !== JSON.stringify(loggedUser._id)) {
+      err.message = 'Incorrect email for the account you are currently logged in with';
+      throw new APIError(err);
+    }
+    if (password) {
+      if (user && await user.passwordMatches(password)) {
+        return true;
+      }
+      err.message = 'Incorrect email or password';
+    } else {
+      err.message = 'Incorrect email';
+    }
+    throw new APIError(err);
   },
 
   /**

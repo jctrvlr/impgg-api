@@ -67,13 +67,28 @@ exports.replace = async (req, res, next) => {
  * Update existing user
  * @public
  */
-exports.update = (req, res, next) => {
-  const ommitRole = req.locals.user.role !== 'admin' ? 'role' : '';
-  const updatedUser = omit(req.body, ommitRole);
-  const user = Object.assign(req.locals.user, updatedUser);
+exports.update = async (req, res, next) => {
+  const omitThings = ['domains', 'subscription', 'services', 'tokens'];
+  if (req.locals.user.role !== 'admin') omitThings.push('role');
+  const updatedUser = omit(req.body, omitThings);
+  const userToUpdate = await User.findById(req.params.userId);
+  const user = Object.assign(userToUpdate, updatedUser);
 
   user.save()
     .then(savedUser => res.json(savedUser.transform()))
+    .catch(e => next(User.checkDuplicateEmail(e)));
+};
+
+/**
+ * Change existing user's password
+ * @public
+ */
+exports.changePassword = async (req, res, next) => {
+  const { user } = req;
+  const { password } = req.body;
+  user.password = password;
+  user.save()
+    .then(() => res.json(true))
     .catch(e => next(User.checkDuplicateEmail(e)));
 };
 
@@ -100,5 +115,21 @@ exports.remove = (req, res, next) => {
 
   user.remove()
     .then(() => res.status(httpStatus.NO_CONTENT).end())
+    .catch(e => next(e));
+};
+
+/**
+ * Delete user's profile picture
+ * @public
+ */
+exports.removePicture = (req, res, next) => {
+  const { user } = req.locals;
+
+  user.profile.picture = '';
+  user.save()
+    .then((savedUser) => {
+      res.status(httpStatus.OK);
+      res.json(savedUser.transform());
+    })
     .catch(e => next(e));
 };

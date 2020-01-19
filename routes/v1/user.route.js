@@ -7,6 +7,7 @@ const {
   createUser,
   replaceUser,
   updateUser,
+  changePassword,
 } = require('../../validations/user.validation');
 
 const router = express.Router();
@@ -87,6 +88,45 @@ router
    */
   .get(authorize(), controller.loggedIn);
 
+router
+  .route('/profile/picture')
+  /**
+   * @api {patch} v1/users/profile/picture Delete User
+   * @apiDescription Delete profile picture
+   * @apiVersion 1.0.0
+   * @apiName DeletePicture
+   * @apiGroup User
+   * @apiPermission user
+   *
+   * @apiHeader {String} Authorization   User's access token
+   *
+   * @apiSuccess (No Content 204)  Successfully deleted
+   *
+   * @apiError (Unauthorized 401) Unauthorized  Only authenticated users can delete the data
+   * @apiError (Forbidden 403)    Forbidden     Only user with same id or admins can delete the data
+   * @apiError (Not Found 404)    NotFound      User does not exist
+   */
+  .delete(authorize(LOGGED_USER), controller.removePicture);
+
+router
+  .route('/password')
+  /**
+   * @api {get} v1/users/password Change user's password
+   * @apiDescription Change user's password
+   * @apiVersion 1.0.0
+   * @apiName ChangePassword
+   * @apiGroup User
+   * @apiPermission user
+   *
+   * @apiHeader {String} Authorization   User's access token
+   *
+   * @apiSuccess {Boolean}  success         Password change successful
+   *
+   * @apiError (Unauthorized 401) Unauthorized Only authenticated users can access the data
+   * @apiError (Forbidden 403)    Forbidden    Only user with same id or admins can access the data
+   * @apiError (Not Found 404)    NotFound     User does not exist
+   */
+  .post(authorize(LOGGED_USER), validate(changePassword), controller.changePassword);
 
 router
   .route('/:userId')
@@ -100,6 +140,8 @@ router
    *
    * @apiHeader {String} Authorization   User's access token
    *
+   * @apiParam  {String{6..128}}     password  User's new password
+   *
    * @apiSuccess {String}  id         User's id
    * @apiSuccess {String}  name       User's name
    * @apiSuccess {String}  email      User's email
@@ -112,7 +154,7 @@ router
    */
   .get(authorize(LOGGED_USER), controller.get)
   /**
-   * @api {put} v1/users/:id Replace User
+   * @api {put} v1/users/:userId Replace User
    * @apiDescription Replace the whole user document with a new one
    * @apiVersion 1.0.0
    * @apiName ReplaceUser
@@ -140,7 +182,7 @@ router
    */
   .put(authorize(LOGGED_USER), validate(replaceUser), controller.replace)
   /**
-   * @api {patch} v1/users/:id Update User
+   * @api {patch} v1/users/:userId Update User
    * @apiDescription Update some fields of a user document
    * @apiVersion 1.0.0
    * @apiName UpdateUser
@@ -151,7 +193,9 @@ router
    *
    * @apiParam  {String}             email     User's email
    * @apiParam  {String{6..128}}     password  User's password
-   * @apiParam  {String{..128}}      [name]    User's name
+   * @apiParam  {String{..128}}      [profile.name]    User's name
+   * @apiParam  {String{..128}}      [profile.picture]    User's picture
+   * @apiParam  {String{..128}}      [preferences.primaryDomain]    Primary Domain Preference
    * @apiParam  {String=user,admin}  [role]    User's role
    * (You must be an admin to change the user's role)
    *

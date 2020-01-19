@@ -283,7 +283,7 @@ exports.list = async (req, res, next) => {
       // TODO: Fix popLocation query so that it returns the region not count
       // eslint-disable-next-line no-restricted-syntax
       Promise.all(transformedLinks.map(async (link) => {
-        link.numClicks = await PageView.count({ linkId: link._id });
+        link.numClicks = await PageView.countDocuments({ linkId: link._id });
         link.lastClick = await PageView.findOne({
           linkId: link._id,
         }, {}, {

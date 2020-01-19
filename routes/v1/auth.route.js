@@ -1,6 +1,7 @@
 const express = require('express');
 const validate = require('express-validation');
 const controller = require('../../controllers/auth.controller');
+const { authorize, LOGGED_USER } = require('../../middlewares/auth');
 const oAuthLogin = require('../../middlewares/auth').oAuth;
 const {
   login,
@@ -10,6 +11,25 @@ const {
 } = require('../../validations/auth.validation');
 
 const router = express.Router();
+
+/**
+ * @api {post} v1/auth Login
+ * @apiDescription Authenticate a user but don't return accessToken
+ * @apiVersion 1.0.0
+ * @apiName Auth
+ * @apiGroup Auth
+ * @apiPermission public
+ *
+ * @apiParam  {String}         email     User's email
+ * @apiParam  {String{..128}}  password  User's password
+ *
+ * @apiSuccess  {bool}  authenticated   Boolean whether or not the user is authenticated
+ *
+ * @apiError (Bad Request 400)  ValidationError  Some parameters may contain invalid values
+ * @apiError (Unauthorized 401)  Unauthorized     Incorrect email or password
+ */
+router.route('/')
+  .post(authorize(LOGGED_USER), validate(login), controller.auth);
 
 /**
  * @api {post} v1/auth/register Register
