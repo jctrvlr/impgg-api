@@ -36,15 +36,35 @@ exports.getLinkInfo = async (req, res, next) => {
       // TODO: Fix popLocation query so that it returns the region not count
       // eslint-disable-next-line no-restricted-syntax
       Promise.all(transformedLinks.map(async (link) => {
-        link.popLocation = await PageView.aggregate([{
+        link.countries = await PageView.aggregate([{
           $match: { linkId: link._id },
         }, {
           $unwind: '$location',
         }, {
-          $group: { _id: '$location.region', count: { $sum: 1 } },
+          $group: { _id: '$location.country', count: { $sum: 1 } },
         }, {
           $sort: { count: -1 },
         }]);
+        console.log(link.countries);
+
+        if (link.countries.some(el => el._id === 'US')) {
+          if (link.countries.some(el => el._id !== 'US')) {
+            link.justUSA = false;
+          } else {
+            link.justUSA = true;
+          }
+          console.log(link.justUSA);
+          link.states = await PageView.aggregate([{
+            $match: { linkId: link._id, 'location.country': 'US' },
+          }, {
+            $unwind: '$location',
+          }, {
+            $group: { _id: '$location.stateRegion', count: { $sum: 1 } },
+          }, {
+            $sort: { count: -1 },
+          }]);
+          console.log(link.states);
+        }
 
         link.referrer = await PageView.aggregate([{
           $match: { linkId: link._id },

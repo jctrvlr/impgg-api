@@ -1,5 +1,6 @@
 /* eslint-disable no-param-reassign */
 const httpStatus = require('http-status');
+const { Reader } = require('@maxmind/geoip2-node');
 const axios = require('axios');
 const cheerio = require('cheerio');
 const Link = require('../models/link.model');
@@ -33,6 +34,13 @@ exports.get = async (req, res, next) => {
         userAgent: req.useragent,
         device,
         ref: req.headers.referer,
+        location: {
+          city: 'N/A',
+          country: 'N/A',
+          postal: 'N/A',
+          stateRegion: 'N/A',
+          timeZone: 'N/A',
+        },
       });
       pageview.save();
 
@@ -41,6 +49,17 @@ exports.get = async (req, res, next) => {
 
       // Redirect to saved URI
       res.redirect(302, link.url);
+      Reader.open('data/GeoLite2-City.mmdb').then((reader) => {
+        const response = reader.city(req.ip);
+        pageview.location.city = response.city.names.en;
+        pageview.location.country = response.country.isoCode;
+        pageview.location.postal = response.postal.code;
+        pageview.location.stateRegion = response.subdivisions[0].isoCode;
+        pageview.location.timeZone = response.location.timeZone;
+        pageview.save();
+      }).catch(() => {
+        logger.info(`Error reading IP location information: ${req.ip}`);
+      });
     } else {
       // TODO: Redirect to link not found page
       res.status(httpStatus.NOT_FOUND);
@@ -172,7 +191,7 @@ exports.create = async (req, res, next) => {
 
     // TODO: CHECK IF USER HAS CREATED A SHORTLINK FOR URI already
     await Link.checkUserDuplicate(req.user._id, uri, sLink, linkDomain);
-    await Link.checkDuplicateShortLink(sLink);
+    await Link.checkDuplicateShortLink(sLink, linkDomain);
 
     const siteUrl = uri;
     let pageTitle = '';
