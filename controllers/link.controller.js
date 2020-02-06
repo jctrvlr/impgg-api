@@ -100,7 +100,6 @@ exports.checkShortLink = async (req, res, next) => {
   try {
     const { sLink } = req.body;
     const checkDup = await Link.checkDuplicateShortLink(sLink);
-    console.log('checkdup: ', checkDup);
     if (!checkDup) {
       res.status(httpStatus.OK);
       res.json({ checkDup: false });
@@ -186,7 +185,6 @@ exports.create = async (req, res, next) => {
 
     if (!/^https?:\/\//i.test(uri)) {
       uri = `https://${uri}`;
-      console.log('uri changed: ', uri);
     }
 
     // TODO: CHECK IF USER HAS CREATED A SHORTLINK FOR URI already
@@ -205,7 +203,6 @@ exports.create = async (req, res, next) => {
       console.log(err);
     }
 
-    console.log('pageTitle is: ', pageTitle);
     let shortLink = '';
     if (sLink) {
       shortLink = sLink;
@@ -246,7 +243,6 @@ exports.update = async (req, res, next) => {
     await Link.checkUserDuplicate(req.user._id, uri, sLink, domain);
     await Link.checkDuplicateShortLink(sLink);
 
-    console.log(req.body);
     Link.findOne({ _id: linkId })
       .then((_link) => {
         if (uri) _link.url = uri;
@@ -290,16 +286,12 @@ exports.list = async (req, res, next) => {
   // links the user should have access too
   try {
     const links = await Link.list(req.query);
-    console.log('links here', links);
     if (!links.length) {
       res.status(httpStatus.NO_CONTENT);
       res.json(links);
     } else {
       const transformedLinks = links.map(link => link.transform());
       // '_id','creatorId', 'url', 'type', 'shortLink', 'pageTitle', 'createdAt', 'updatedAt'
-      console.log(transformedLinks);
-
-      // TODO: Fix popLocation query so that it returns the region not count
       // eslint-disable-next-line no-restricted-syntax
       Promise.all(transformedLinks.map(async (link) => {
         link.numClicks = await PageView.countDocuments({ linkId: link._id });

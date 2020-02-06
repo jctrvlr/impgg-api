@@ -45,7 +45,6 @@ exports.getLinkInfo = async (req, res, next) => {
         }, {
           $sort: { count: -1 },
         }]);
-        console.log(link.countries);
 
         if (link.countries.some(el => el._id === 'US')) {
           if (link.countries.some(el => el._id !== 'US')) {
@@ -53,7 +52,6 @@ exports.getLinkInfo = async (req, res, next) => {
           } else {
             link.justUSA = true;
           }
-          console.log(link.justUSA);
           link.states = await PageView.aggregate([{
             $match: { linkId: link._id, 'location.country': 'US' },
           }, {
@@ -63,7 +61,6 @@ exports.getLinkInfo = async (req, res, next) => {
           }, {
             $sort: { count: -1 },
           }]);
-          console.log(link.states);
         }
 
         link.referrer = await PageView.aggregate([{
