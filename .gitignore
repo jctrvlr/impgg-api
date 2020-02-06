@@ -4,6 +4,9 @@ package-lock.json
 # Environment variables
 .env
 
+# Temp file storage
+bin
+
 # Logs
 logs
 *.log

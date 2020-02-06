@@ -24,6 +24,7 @@
   "author": "John Cummings <jcummings5@gmail.com>",
   "license": "MIT",
   "dependencies": {
+    "@maxmind/geoip2-node": "^1.4.0",
     "axios": "^0.18.0",
     "bcryptjs": "^2.4.3",
     "bluebird": "^3.5.3",

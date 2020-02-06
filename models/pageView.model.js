@@ -26,14 +26,11 @@ const pageViewSchema = new mongoose.Schema({
 
   },
   location: {
-    hostname: {
-      type: String,
-      default: 'N/A',
-    },
     city: String,
-    region: String,
     country: String,
     postal: String,
+    stateRegion: String,
+    timeZone: String,
   },
 }, {
   timestamps: true,
