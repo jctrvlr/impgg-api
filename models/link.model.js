@@ -142,7 +142,6 @@ linkSchema.statics = {
   async checkDuplicateShortLink(sLink) {
     try {
       const link = await this.findOne({ shortLink: sLink }).exec();
-      console.log(link);
       if (link !== null) {
         return new APIError({
           message: 'Short link already exists',
