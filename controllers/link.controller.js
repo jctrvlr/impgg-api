@@ -135,7 +135,7 @@ exports.createPub = async (req, res, next) => {
         pageTitle = $('head > title').text();
       }
     } catch (err) {
-      console.log(err);
+      logger.error(err);
     }
 
     // TODO: CHECK IF USER HAS CREATED A SHORTLINK FOR URI already
@@ -200,7 +200,7 @@ exports.create = async (req, res, next) => {
         pageTitle = $('head > title').text();
       }
     } catch (err) {
-      console.log(err);
+      logger.error(err);
     }
 
     let shortLink = '';
@@ -255,7 +255,7 @@ exports.update = async (req, res, next) => {
         res.json(_link.transform());
       })
       .catch((err) => {
-        console.log(err);
+        logger.error(err);
         next(new APIError({
           message: 'Short link already exists',
           status: httpStatus.CONFLICT,
@@ -307,7 +307,7 @@ exports.list = async (req, res, next) => {
       });
     }
   } catch (error) {
-    console.log('error', error);
+    logger.error(error);
     next(error);
   }
 };
