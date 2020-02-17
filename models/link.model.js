@@ -29,6 +29,22 @@ const linkSchema = new mongoose.Schema({
     type: String,
     unique: true,
   },
+  archived: {
+    type: Boolean,
+    default: false,
+  },
+  archiveEvents: [{
+    archiveType: {
+      type: Boolean,
+    },
+    archivedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+    },
+    archivedAt: {
+      type: Date,
+    },
+  }],
 }, {
   timestamps: true,
 });
@@ -41,8 +57,7 @@ const linkSchema = new mongoose.Schema({
  */
 linkSchema.pre('save', async (next) => {
   try {
-    // TODO: Generate short link if not given here -- Or not in save but somewhere else
-    // TODO: Get page title here
+    // TODO: Determine if there is anything that i want to do presave
     return next();
   } catch (error) {
     return next(error);
@@ -55,7 +70,7 @@ linkSchema.pre('save', async (next) => {
 linkSchema.method({
   transform() {
     const transformed = {};
-    const fields = ['_id', 'creatorId', 'url', 'domain', 'type', 'shortLink', 'pageTitle', 'createdAt', 'updatedAt'];
+    const fields = ['_id', 'creatorId', 'url', 'domain', 'type', 'shortLink', 'pageTitle', 'createdAt', 'updatedAt', 'archived', 'archiveEvents'];
 
     fields.forEach((field) => {
       transformed[field] = this[field];
@@ -69,6 +84,33 @@ linkSchema.method({
  * Statics
  */
 linkSchema.statics = {
+
+  /**
+   * Set link as archived (true/false) and insert an archive event into the array of archive events.
+   * @param {String} linkId - ID of link to archive
+   */
+  async archive(linkId, user) {
+    try {
+      if (!linkId) throw new APIError({ message: 'A link ID is required' });
+
+      const link = await this.findById(linkId).exec();
+
+      const archiveEvent = {
+        archiveType: !link.archived,
+        archivedBy: user._id,
+        archivedAt: Date.now(),
+      };
+      link.archived = !link.archived;
+      if (!link.archiveEvents) {
+        link.archiveEvents = [];
+      }
+      link.archiveEvents.push(archiveEvent);
+      link.archiveEvents = link.archiveEvents;
+      return link.save();
+    } catch (error) {
+      throw error;
+    }
+  },
 
   /**
    * Find link by shortLink

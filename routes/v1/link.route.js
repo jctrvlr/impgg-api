@@ -7,6 +7,7 @@ const {
   getLinkInfo,
   updateLink,
   checkSlink,
+  archiveLink,
 } = require('../../validations/link.validation');
 
 const router = express.Router();
@@ -51,6 +52,24 @@ router
    * @apiSuccess (OK 200) {Boolean} checkDup
    */
   .post(authorize(LOGGED_USER), validate(checkSlink), controller.checkShortLink);
+
+router
+  .route('/archive')
+  /**
+   * @api {post} v1/archive Archive link
+   * @apiDescription Archive link
+   * @apiVersion 1.0.0
+   * @apiName Archive link
+   * @apiGroup Link
+   * @apiPermission public
+   *
+   * @apiHeader {String} Authorization   User's access token
+   *
+   * @apiParam {String}    [linkId]    sLink
+   *
+   * @apiSuccess (OK 200) {Object} User
+   */
+  .post(authorize(LOGGED_USER), validate(archiveLink), controller.archiveLink);
 
 router
   .route('/')

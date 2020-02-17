@@ -93,6 +93,34 @@ exports.getLink = async (req, res, next) => {
 };
 
 /**
+ * Archive link
+ * @public
+ */
+exports.archiveLink = async (req, res, next) => {
+  try {
+    const { linkId } = req.body;
+    console.log('inside archiveLink: ', linkId);
+
+    Link.archive(linkId, req.user)
+      .then((_link) => {
+        res.status(httpStatus.OK);
+        console.log('inside archiveLink', _link.transform());
+        res.json(_link.transform());
+      })
+      .catch((err) => {
+        logger.error(err);
+        next(new APIError({
+          message: 'Could not archive the link',
+          status: httpStatus.CONFLICT,
+          isPublic: true,
+        }));
+      });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
  * Check shortLink uniqueness
  * @public
  */
