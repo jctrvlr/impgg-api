@@ -1,6 +1,15 @@
 const Joi = require('joi');
 
 module.exports = {
+  // POST /archive
+  archiveLink: {
+    body: {
+      linkId: Joi.string(),
+    },
+    params: {
+      userId: Joi.string().regex(/^[a-fA-F0-9]{24}$/),
+    },
+  },
   // GET /
   getLink: {
     params: {

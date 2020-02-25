@@ -26,6 +26,7 @@ router
    * @apiParam  {String}                 [url]         Link's url
    * @apiParam  {String=website,youtube} [type]        Link's type
    * @apiParam  {String}                 [shortLink]   Link's shortLink
+   * @apiParam  {Boolean}                [archived]    Archived vs unarchived links
    *
    * @apiSuccess {Object[]} links List of links.
    *

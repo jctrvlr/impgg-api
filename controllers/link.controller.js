@@ -19,6 +19,9 @@ exports.get = async (req, res, next) => {
     const link = await Link.findByShort(linkId);
 
     if (link) {
+      // Redirect to saved URI
+      res.redirect(302, link.url);
+
       // TODO: Parse referer and save what social site it came from
       let device;
       if (req.useragent.isDesktop) {
@@ -44,11 +47,7 @@ exports.get = async (req, res, next) => {
       });
       pageview.save();
 
-      // TODO: Get location data about user and save in pageview --
-      // Do we save location data with initial pageview object or add information on to object.
-
-      // Redirect to saved URI
-      res.redirect(302, link.url);
+      // After redirection get location info and save in pageview
       Reader.open('data/GeoLite2-City.mmdb').then((reader) => {
         const response = reader.city(req.ip);
         pageview.location.city = response.city.names.en;
@@ -87,6 +86,56 @@ exports.getLink = async (req, res, next) => {
       res.status(httpStatus.NOT_FOUND);
       res.json({ error: 'Link cannot be found' });
     }
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Archive link
+ * @public
+ */
+exports.archiveLink = async (req, res, next) => {
+  try {
+    const { linkId } = req.body;
+    console.log('inside archiveLink: ', linkId);
+
+    Link.archive(linkId, req.user)
+      .then((_link) => {
+        res.status(httpStatus.OK);
+        console.log('inside archiveLink', _link.transform());
+        res.json(_link.transform());
+      })
+      .catch((err) => {
+        logger.error(err);
+        next(new APIError({
+          message: 'Could not archive the link',
+          status: httpStatus.CONFLICT,
+          isPublic: true,
+        }));
+      });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Delete link
+ * @public
+ */
+exports.deleteLink = async (req, res, next) => {
+  try {
+    const { linkId } = req.body;
+    console.log('inside deleteLink: ', linkId);
+
+    const pageViewCount = await PageView.deleteMany({ linkId });
+
+    const linkRemoveRes = await Link.deleteOne({ _id: linkId });
+    res.status(httpStatus.OK);
+    res.json({
+      pageviewsRemoved: pageViewCount.deletedCount,
+      linkRemoved: linkRemoveRes.deletedCount,
+    });
   } catch (error) {
     next(error);
   }
