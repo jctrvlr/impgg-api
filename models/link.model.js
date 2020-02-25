@@ -122,7 +122,7 @@ linkSchema.statics = {
     try {
       if (!sLink) throw new APIError({ message: 'An shortLink is required' });
 
-      const link = await this.findOne({ shortLink: sLink }).exec();
+      const link = await this.findOne({ shortLink: sLink, archived: false }).exec();
 
       if (link) return link;
 
@@ -162,10 +162,10 @@ linkSchema.statics = {
    * @returns {Promise<Link[]>}
    */
   list({
-    page = 1, perPage = 30, creatorId, url, type, shortLink,
+    page = 1, perPage = 30, creatorId, url, type, shortLink, archived,
   }) {
     const options = omitBy({
-      creatorId, url, type, shortLink,
+      creatorId, url, type, shortLink, archived,
     }, isNil);
 
     return this.find(options)

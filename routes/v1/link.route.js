@@ -65,11 +65,29 @@ router
    *
    * @apiHeader {String} Authorization   User's access token
    *
-   * @apiParam {String}    [linkId]    sLink
+   * @apiParam {String}    [linkId]    linkId
    *
    * @apiSuccess (OK 200) {Object} User
    */
   .post(authorize(LOGGED_USER), validate(archiveLink), controller.archiveLink);
+
+router
+  .route('/delete')
+  /**
+   * @api {post} v1/delete Delete link
+   * @apiDescription Delete link
+   * @apiVersion 1.0.0
+   * @apiName Delete link
+   * @apiGroup Link
+   * @apiPermission public
+   *
+   * @apiHeader {String} Authorization   User's access token
+   *
+   * @apiParam {String}    [linkId]    linkId
+   *
+   * @apiSuccess (OK 200) {Object} User
+   */
+  .post(authorize(LOGGED_USER), validate(archiveLink), controller.deleteLink);
 
 router
   .route('/')
