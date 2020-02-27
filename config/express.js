@@ -10,7 +10,7 @@ const passport = require('passport');
 const routes = require('../routes/v1');
 const linkRoutes = require('../routes');
 const pubRoutes = require('../routes/juliet');
-const { logs } = require('./vars');
+const { logs, env } = require('./vars');
 const strategies = require('./passport');
 const error = require('../middlewares/error');
 
@@ -64,5 +64,9 @@ app.use(error.notFound);
 
 // error handler, send stacktrace only during development
 app.use(error.handler);
+
+if (env === 'production') {
+  app.set('trust proxy', 'loopback');
+}
 
 module.exports = app;
