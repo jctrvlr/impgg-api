@@ -12,10 +12,13 @@ const mongoose = require('./config/mongoose');
 mongoose.connect();
 
 if (env === 'production') {
+  const privateKey = fs.readFileSync('/etc/letsencrypt/live/api.impgg.dev/privkey.pem', 'utf8');
+  const certificate = fs.readFileSync('/etc/letsencrypt/live/api.impgg.dev/cert.pem', 'utf8');
+  const ca = fs.readFileSync('/etc/letsencrypt/live/api.impgg.dev/chain.pem', 'utf8');
   https.createServer({
-    key: fs.readFileSync('./key.pem'),
-    cert: fs.readFileSync('./cert.pem'),
-    passphrase: 'Ireland2018',
+    key: privateKey,
+    cert: certificate,
+    ca,
   }, app).listen(port, '0.0.0.0', () => logger.info(`server started on port ${port} (${env})`));
 } else {
   // listen to requests
