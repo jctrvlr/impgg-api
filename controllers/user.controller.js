@@ -1,6 +1,8 @@
 const httpStatus = require('http-status');
 const { omit } = require('lodash');
 const User = require('../models/user.model');
+const Domain = require('../models/domain.model');
+const { env } = require('../config/vars');
 
 /**
  * Load user and append to req.
@@ -35,9 +37,16 @@ exports.loggedIn = (req, res) => res.json(req.user.transform());
 exports.create = async (req, res, next) => {
   try {
     const user = new User(req.body);
+    // Add default domain
+    const domain = await Domain.findOne({ uri: env === 'development' ? 'http://localhost:3001' : 'https://imp.gg' });
+    user.preferences.primaryDomain = domain._id;
+    user.domains.push(domain._id);
+
     const savedUser = await user.save();
+    const userTransformed = await User.findOne({ _id: savedUser._id }).populate('domains');
+
     res.status(httpStatus.CREATED);
-    res.json(savedUser.transform());
+    res.json(userTransformed);
   } catch (error) {
     next(User.checkDuplicateEmail(error));
   }

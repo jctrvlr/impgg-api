@@ -17,8 +17,8 @@ const linkSchema = new mongoose.Schema({
     match: /((([A-Za-z]{3,9}:(?:\/\/)?)(?:[-;:&=+$,\w]+@)?[A-Za-z0-9.-]+|(?:www\.|[-;:&=+$,\w]+@)[A-Za-z0-9.-]+)((?:\/[+~%/.\w\-_]*)?\??(?:[-+=&;%@.\w_]*)#?(?:[.!/\\\w]*))?)/,
   },
   domain: {
-    type: String,
-    default: 'https://imp.gg',
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Domain',
   },
   pageTitle: { type: String },
   type: {
@@ -133,6 +133,26 @@ linkSchema.statics = {
   },
 
   /**
+   * Find link by shortLink + domain
+   *
+   * @param {String} shortLink - The short link of a link
+   * @returns {Promise<User, APIError>}
+   */
+  async findByShortDomain(sLink, domain) {
+    try {
+      if (!sLink) throw new APIError({ message: 'An shortLink is required' });
+
+      const link = await this.findOne({ shortLink: sLink, archived: false, domain }).exec();
+
+      if (link) return link;
+
+      return null;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
    * Generated a unique short link
    *
    * @param {String} url - url of website it will link too
@@ -169,6 +189,7 @@ linkSchema.statics = {
     }, isNil);
 
     return this.find(options)
+      .populate('domain')
       .sort({ createdAt: -1 })
       .skip(perPage * (page - 1))
       .limit(perPage)
