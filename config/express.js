@@ -65,6 +65,7 @@ app.use(error.notFound);
 // error handler, send stacktrace only during development
 app.use(error.handler);
 
+// eslint-disable-next-line no-constant-condition
 if (env === 'production' || 'development') {
   app.set('trust proxy', 'loopback');
 }
