@@ -6,6 +6,7 @@ const logger = require('../config/logger');
 const PageView = require('../models/pageView.model');
 const User = require('../models/user.model');
 const APIError = require('../utils/APIError');
+const { dnsKey } = require('../config/vars');
 
 /**
  * Get Domain Info
@@ -20,6 +21,34 @@ exports.get = async (req, res, next) => {
     if (domain) {
       res.status(httpStatus.OK);
       res.json(domain.transform());
+    } else {
+      res.status(httpStatus.NOT_FOUND);
+      res.json({ error: 'Domain cannot be found' });
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Check domain DNS status
+ * @public
+ */
+exports.checkDNS = async (req, res, next) => {
+  try {
+    const domain = req.get('Host');
+    console.log('wtf');
+    // See if domain exists in database
+    const domainFound = await Domain.find({ uri: domain }).exec();
+    const authed = req.headers && req.headers.authorization && req.headers.authorization === dnsKey;
+    if (domainFound && authed) {
+      // Check status
+      if (domainFound.status === 1) {
+        domainFound.status = 2;
+        const status = await domainFound.save();
+        res.status(httpStatus.OK);
+        res.json(status);
+      }
     } else {
       res.status(httpStatus.NOT_FOUND);
       res.json({ error: 'Domain cannot be found' });

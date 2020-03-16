@@ -1,7 +1,7 @@
 const express = require('express');
 const validate = require('express-validation');
 const controller = require('../../controllers/domain.controller');
-const { authorize, LOGGED_USER } = require('../../middlewares/auth');
+const { authorize, LOGGED_USER, CHECK_DNS } = require('../../middlewares/auth');
 const {
   createDomain,
   updateDomain,
@@ -28,6 +28,20 @@ router
    * @apiSuccess (OK 200) {Boolean} checkDup
    */
   .post(authorize(LOGGED_USER), validate(checkURI), controller.checkURI);
+
+router
+  .route('/check')
+  /**
+   * @api {get} v1/domain/check Check dns is propagated
+   * @apiDescription Check dns is propagated
+   * @apiVersion 1.0.0
+   * @apiName Check DNS
+   * @apiGroup Domain
+   * @apiPermission public
+   *
+   * @apiSuccess (OK 200) {Object} Domain
+   */
+  .get(authorize(CHECK_DNS), controller.checkDNS);
 
 router
   .route('/archive')
