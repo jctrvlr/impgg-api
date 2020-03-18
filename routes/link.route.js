@@ -26,4 +26,7 @@ router
    */
   .get(validate(getLink), controller.get);
 
+router
+  .route('/')
+  .all((req, res) => res.redirect('https://impgg.com'));
 module.exports = router;

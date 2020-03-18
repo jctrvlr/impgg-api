@@ -4,6 +4,7 @@ const authRoutes = require('./auth.route');
 const linkRoutes = require('./link.route');
 const linksRoutes = require('./links.route');
 const dashboardRoutes = require('./dashboard.route');
+const domainRoutes = require('./domain.route');
 
 const router = express.Router();
 
@@ -17,5 +18,6 @@ router.use('/auth', authRoutes);
 router.use('/dashboard', dashboardRoutes);
 router.use('/link', linkRoutes);
 router.use('/links', linksRoutes);
+router.use('/domain', domainRoutes);
 
 module.exports = router;

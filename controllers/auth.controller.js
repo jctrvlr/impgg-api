@@ -3,6 +3,8 @@ const moment = require('moment-timezone');
 const User = require('../models/user.model');
 const RefreshToken = require('../models/refreshToken.model');
 const { jwtExpirationInterval } = require('../config/vars');
+const Domain = require('../models/domain.model');
+const { env } = require('../config/vars');
 
 /**
 * Returns a formated object with tokens
@@ -23,9 +25,16 @@ function generateTokenResponse(user, accessToken) {
  */
 exports.register = async (req, res, next) => {
   try {
-    const user = await (new User(req.body)).save();
-    const userTransformed = user.transform();
-    const token = generateTokenResponse(user, user.token());
+    const user = new User(req.body);
+    // Add default domain
+    const domain = await Domain.findOne({ uri: env === 'development' ? 'http://localhost:3001' : 'https://imp.gg' });
+    user.domains.push(domain._id);
+
+    const savedUser = await user.save();
+
+    const userTransformed = await User.findOne({ _id: savedUser._id }).populate('domains');
+    console.log(userTransformed);
+    const token = generateTokenResponse(savedUser, savedUser.token());
     res.status(httpStatus.CREATED);
     return res.json({ token, user: userTransformed });
   } catch (error) {
@@ -41,7 +50,8 @@ exports.login = async (req, res, next) => {
   try {
     const { user, accessToken } = await User.findAndGenerateToken(req.body);
     const token = generateTokenResponse(user, accessToken);
-    const userTransformed = user.transform();
+    const userTransformed = await User.findOne({ _id: user._id }).select('+password').populate('domains');
+
     return res.json({ token, user: userTransformed });
   } catch (error) {
     return next(error);
@@ -72,7 +82,7 @@ exports.oAuth = async (req, res, next) => {
     const { user } = req;
     const accessToken = user.token();
     const token = generateTokenResponse(user, accessToken);
-    const userTransformed = user.transform();
+    const userTransformed = await User.findOne({ _id: user._id }).populate('domains');
     return res.json({ token, user: userTransformed });
   } catch (error) {
     return next(error);

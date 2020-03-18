@@ -4,10 +4,12 @@ const { Reader } = require('@maxmind/geoip2-node');
 const axios = require('axios');
 const cheerio = require('cheerio');
 const Link = require('../models/link.model');
+const Domain = require('../models/domain.model');
 // const User = require('../models/user.model');
 const logger = require('../config/logger');
 const PageView = require('../models/pageView.model');
 const APIError = require('../utils/APIError');
+const { env } = require('../config/vars');
 
 /**
  * Get Link and redirect + pageview
@@ -16,7 +18,11 @@ const APIError = require('../utils/APIError');
 exports.get = async (req, res, next) => {
   try {
     const { linkId } = req.params;
-    const link = await Link.findByShort(linkId);
+    let { domain } = req.hostname;
+    // development hack
+    if (env === 'development') domain = 'http://localhost:3001';
+    const domainF = await Domain.findOne({ uri: domain });
+    const link = await Link.findByShortDomain(linkId, domainF._id);
 
     if (link) {
       // Redirect to saved URI
@@ -60,9 +66,8 @@ exports.get = async (req, res, next) => {
         logger.info(`Error reading IP location information: ${req.ip}`);
       });
     } else {
-      // TODO: Redirect to link not found page
-      res.status(httpStatus.NOT_FOUND);
-      res.json({ error: 'Link cannot be found' });
+      // TODO: Redirect to link not found page based on domain's settings
+      res.redirect(302, 'https://impgg.com/notfound');
     }
   } catch (error) {
     next(error);
@@ -201,10 +206,12 @@ exports.createPub = async (req, res, next) => {
       // TODO: Setup if statements to check if youtube, twitter, facebook,
       // video, etc. or default to `website`
       const linkType = 'website';
+      const domain = await Domain.findOne({ uri: env === 'development' ? 'http://localhost:3001' : 'https://imp.gg' });
 
       const link = new Link({
         url: uri,
         type: linkType,
+        domain: domain._id,
         shortLink,
         pageTitle,
       });
@@ -235,10 +242,11 @@ exports.create = async (req, res, next) => {
     if (!/^https?:\/\//i.test(uri)) {
       uri = `https://${uri}`;
     }
+    const domain = await Domain.findOne({ uri: linkDomain });
 
     // TODO: CHECK IF USER HAS CREATED A SHORTLINK FOR URI already
-    await Link.checkUserDuplicate(req.user._id, uri, sLink, linkDomain);
-    await Link.checkDuplicateShortLink(sLink, linkDomain);
+    await Link.checkUserDuplicate(req.user._id, uri, sLink, domain._id);
+    await Link.checkDuplicateShortLink(sLink, domain._id);
 
     const siteUrl = uri;
     let pageTitle = '';
@@ -266,7 +274,7 @@ exports.create = async (req, res, next) => {
       creatorId: req.user._id,
       url: uri,
       type: linkType,
-      domain: linkDomain,
+      domain: domain._id,
       shortLink,
       pageTitle,
     });
@@ -275,6 +283,7 @@ exports.create = async (req, res, next) => {
     res.status(httpStatus.CREATED);
     res.json(savedLink.transform());
   } catch (error) {
+    console.log(error);
     next(error);
   }
 };
@@ -339,10 +348,10 @@ exports.list = async (req, res, next) => {
       res.status(httpStatus.NO_CONTENT);
       res.json(links);
     } else {
-      const transformedLinks = links.map(link => link.transform());
+      console.log(links);
       // '_id','creatorId', 'url', 'type', 'shortLink', 'pageTitle', 'createdAt', 'updatedAt'
       // eslint-disable-next-line no-restricted-syntax
-      Promise.all(transformedLinks.map(async (link) => {
+      Promise.all(links.map(async (link) => {
         link.numClicks = await PageView.countDocuments({ linkId: link._id });
         link.lastClick = await PageView.findOne({
           linkId: link._id,

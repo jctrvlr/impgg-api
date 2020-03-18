@@ -6,6 +6,7 @@ const moment = require('moment-timezone');
 const jwt = require('jwt-simple');
 const uuidv4 = require('uuid/v4');
 const APIError = require('../utils/APIError');
+
 const { env, jwtSecret, jwtExpirationInterval } = require('../config/vars');
 
 /**
@@ -34,9 +35,16 @@ const userSchema = new mongoose.Schema({
     type: String,
     minlength: 6,
     maxlength: 128,
+    select: false,
   },
-  passwordResetToken: String,
-  passwordResetExpires: Date,
+  passwordResetToken: {
+    type: String,
+    select: false,
+  },
+  passwordResetExpires: {
+    type: Date,
+    select: false,
+  },
 
   profile: {
     firstName: {
@@ -61,29 +69,19 @@ const userSchema = new mongoose.Schema({
     primaryDomain: {
       type: String,
       trim: true,
-      default: 'https://imp.gg',
+      default: env === 'development' ? 'http://localhost:3001' : 'https://imp.gg',
     },
   },
   // TODO: SETUP SETTINGS FOR NOTIFCATIONS/ETC
   // TODO: SETUP PAYMENT OPTIONS/SETTINGS
 
   /**
-   * Array of registered and usable domains
-   *
-   * Domain: {uri, status (Number: -1 - notworking but used to,
-   * 0 - Added but not setup, 1 - Setup but not ready, 2 - setup and ready), dateAdded}
+   * Array of domain IDs
    */
-  domains: {
-    type: [{
-      uri: String,
-      status: Number,
-      dateAdded: Date,
-    }],
-    default: [{
-      uri: 'https://imp.gg',
-      status: 2,
-    }],
-  },
+  domains: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Domain',
+  }],
 
   subscription: {
     subType: {
@@ -94,6 +92,7 @@ const userSchema = new mongoose.Schema({
     transactionId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Transaction',
+      select: false,
     },
     startTimestamp: {
       type: Date,
@@ -146,7 +145,7 @@ userSchema.pre('save', async function save(next) {
 userSchema.method({
   transform() {
     const transformed = {};
-    const fields = ['id', 'email', 'profile', 'role', 'domains', 'subscription', 'createdAt', 'preferences'];
+    const fields = ['id', 'email', 'profile', 'role', 'subscription', 'createdAt', 'preferences', 'domains'];
 
     fields.forEach((field) => {
       transformed[field] = this[field];
@@ -212,7 +211,7 @@ userSchema.statics = {
     const { email, password } = options;
     if (!email) throw new APIError({ message: 'An email is required' });
 
-    const user = await this.findOne({ email }).exec();
+    const user = await this.findOne({ email }).select('+password').exec();
     const err = {
       status: httpStatus.UNAUTHORIZED,
       isPublic: true,
@@ -242,7 +241,7 @@ userSchema.statics = {
     const { email, password, refreshObject } = options;
     if (!email) throw new APIError({ message: 'An email is required to generate a token' });
 
-    const user = await this.findOne({ email }).exec();
+    const user = await this.findOne({ email }).select('+password').exec();
     const err = {
       status: httpStatus.UNAUTHORIZED,
       isPublic: true,
@@ -293,7 +292,7 @@ userSchema.statics = {
   checkDuplicateEmail(error) {
     if (error.name === 'MongoError' && error.code === 11000) {
       return new APIError({
-        message: 'Validation Error',
+        message: 'Email is taken',
         errors: [{
           field: 'email',
           location: 'body',
