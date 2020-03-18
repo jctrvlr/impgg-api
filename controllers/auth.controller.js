@@ -27,7 +27,7 @@ exports.register = async (req, res, next) => {
   try {
     const user = new User(req.body);
     // Add default domain
-    const domain = await Domain.findOne({ uri: env === 'development' ? 'http://localhost:3001' : 'https://imp.gg' });
+    const domain = await Domain.findOne({ uri: env === 'development' ? 'localhost:3001' : 'imp.gg' });
     user.domains.push(domain._id);
 
     const savedUser = await user.save();
