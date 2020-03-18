@@ -66,7 +66,7 @@ app.use(error.notFound);
 app.use(error.handler);
 
 // eslint-disable-next-line no-constant-condition
-if (env === 'production' || 'development') {
+if (env === 'production') {
   app.set('trust proxy', 'loopback');
 }
 

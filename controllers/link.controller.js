@@ -18,9 +18,9 @@ const { env } = require('../config/vars');
 exports.get = async (req, res, next) => {
   try {
     const { linkId } = req.params;
-    let { domain } = req.hostname;
+    let domain = req.hostname;
     // development hack
-    if (env === 'development') domain = 'http://localhost:3001';
+    if (env === 'development') domain = 'localhost:3001';
     const domainF = await Domain.findOne({ uri: domain });
     const link = await Link.findByShortDomain(linkId, domainF._id);
 

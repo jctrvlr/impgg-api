@@ -7,7 +7,7 @@ Domain.countDocuments({}, (err, count) => {
 
   if (count <= 0) {
     const defaultDomain = {
-      uri: env === 'development' ? 'http://localhost:3001' : 'https://imp.gg',
+      uri: env === 'development' ? 'localhost:3001' : 'imp.gg',
       domainType: 'dom',
       status: 2,
       validated: true,
