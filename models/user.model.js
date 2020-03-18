@@ -69,7 +69,7 @@ const userSchema = new mongoose.Schema({
     primaryDomain: {
       type: String,
       trim: true,
-      default: env === 'development' ? 'http://localhost:3001' : 'https://imp.gg',
+      default: env === 'development' ? 'localhost:3001' : 'imp.gg',
     },
   },
   // TODO: SETUP SETTINGS FOR NOTIFCATIONS/ETC
