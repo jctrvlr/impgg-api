@@ -352,6 +352,7 @@ exports.list = async (req, res, next) => {
       // '_id','creatorId', 'url', 'type', 'shortLink', 'pageTitle', 'createdAt', 'updatedAt'
       // eslint-disable-next-line no-restricted-syntax
       Promise.all(links.map(async (link) => {
+        link = link.toJSON();
         link.numClicks = await PageView.countDocuments({ linkId: link._id });
         link.lastClick = await PageView.findOne({
           linkId: link._id,

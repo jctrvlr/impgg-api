@@ -24,18 +24,18 @@ exports.getLinkInfo = async (req, res, next) => {
   // TODO: Write user check using req.user to see if user is admin or what links or what
   // links the user should have access too
   try {
-    const links = await Link.find({ _id: req.params.linkId }).limit(1);
+    const links = await Link.find({ _id: req.params.linkId }).populate('domain').limit(1);
     if (!links.length) {
       logger.debug(`Link not found - query: ${req.query}`);
       res.status(httpStatus.NO_CONTENT);
       res.json(links);
     } else {
-      const transformedLinks = links.map(link => link.transform());
       // '_id','creatorId', 'url', 'type', 'shortLink', 'pageTitle', 'createdAt', 'updatedAt'
 
       // TODO: Fix popLocation query so that it returns the region not count
       // eslint-disable-next-line no-restricted-syntax
-      Promise.all(transformedLinks.map(async (link) => {
+      Promise.all(links.map(async (link) => {
+        link = link.toJSON();
         link.countries = await PageView.aggregate([{
           $match: { linkId: link._id },
         }, {
