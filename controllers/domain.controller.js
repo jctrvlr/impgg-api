@@ -37,7 +37,6 @@ exports.get = async (req, res, next) => {
 exports.checkDNS = async (req, res, next) => {
   try {
     const domain = req.get('Host');
-    console.log('wtf');
     // See if domain exists in database
     const domainFound = await Domain.find({ uri: domain }).exec();
     const authed = req.headers && req.headers.authorization && req.headers.authorization === dnsKey;

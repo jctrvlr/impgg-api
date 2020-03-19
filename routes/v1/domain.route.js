@@ -1,7 +1,7 @@
 const express = require('express');
 const validate = require('express-validation');
 const controller = require('../../controllers/domain.controller');
-const { authorize, LOGGED_USER, CHECK_DNS } = require('../../middlewares/auth');
+const { authorize, LOGGED_USER } = require('../../middlewares/auth');
 const {
   createDomain,
   updateDomain,
@@ -41,7 +41,7 @@ router
    *
    * @apiSuccess (OK 200) {Object} Domain
    */
-  .get(authorize(CHECK_DNS), controller.checkDNS);
+  .get(controller.checkDNS);
 
 router
   .route('/archive')
