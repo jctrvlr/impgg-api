@@ -40,13 +40,17 @@ exports.checkDNS = async (req, res, next) => {
     // See if domain exists in database
     const domainFound = await Domain.find({ uri: domain }).exec();
     const authed = req.headers && req.headers.authorization && req.headers.authorization === dnsKey;
+    console.log(domain, domainFound, authed);
     if (domainFound && authed) {
       // Check status
-      if (domainFound.status === 1) {
-        domainFound.status = 2;
-        const status = await domainFound.save();
+      if (domainFound[0].status === 1) {
+        domainFound[0].status = 2;
+        const status = await domainFound[0].save();
+        console.log('status', status);
         res.status(httpStatus.OK);
         res.json(status);
+      } else {
+        res.status(httpStatus.OK);
       }
     } else {
       res.status(httpStatus.NOT_FOUND);
