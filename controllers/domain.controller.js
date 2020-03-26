@@ -96,10 +96,15 @@ exports.archiveDomain = async (req, res, next) => {
 exports.deleteDomain = async (req, res, next) => {
   try {
     const { domainId } = req.body;
+    const domainFound = await Domain.findById(domainId);
+    let user;
+    if (domainFound) {
+      user = await User.findOne({ _id: domainFound.creatorId }).populate('domains');
+    }
 
-    const resD = await Domain.deleteOne({ _id: domainId });
+    await Domain.delete({ _id: domainId });
     res.status(httpStatus.OK);
-    res.json(resD);
+    res.json(user);
   } catch (error) {
     next(error);
   }

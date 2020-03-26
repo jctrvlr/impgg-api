@@ -202,6 +202,38 @@ userSchema.statics = {
   },
 
   /**
+   * Remove domain from array
+   *
+   * @param {ObjectId} userId - The objectId of user to remove domain from.
+   * @param {ObjectId} domainId - The objectId of domain to remove.
+   * @returns {Promise<User, APIError>}
+   */
+  async removeDomain(userId, domainId) {
+    try {
+      let user;
+
+      if (mongoose.Types.ObjectId.isValid(userId)) {
+        user = await this.findById(userId).exec();
+      }
+      if (user) {
+        const index = user.domains.indexOf(domainId);
+        if (index > -1) {
+          user.domains.splice(index, 1);
+        }
+        user = await user.save();
+        return user;
+      }
+
+      throw new APIError({
+        message: 'User does not exist',
+        status: httpStatus.NOT_FOUND,
+      });
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
    * Auth user
    *
    * @param {ObjectId} id - The objectId of user.
