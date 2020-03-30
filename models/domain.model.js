@@ -2,8 +2,6 @@ const mongoose = require('mongoose');
 const httpStatus = require('http-status');
 const { omitBy, isNil } = require('lodash');
 const APIError = require('../utils/APIError');
-const User = require('../models/user.model');
-const Link = require('../models/link.model');
 
 /**
  * Domain Schema
@@ -65,12 +63,14 @@ domainSchema.pre('save', async (next) => {
   }
 });
 
-domainSchema.pre('deleteOne', async function preDeleteOne(next) {
+// eslint-disable-next-line func-names
+domainSchema.pre('deleteOne', { document: true, query: false }, async function (next) {
   try {
-    await Link.deleteMany({ domain: this._id }).catch((err) => {
+    console.log('in predeleteOne');
+    await this.model('Link').deleteMany({ domain: this._id }).catch((err) => {
       console.log(err);
     });
-    await User.removeDomain(this.creatorId, this._id).catch((err) => {
+    await this.model('User').removeDomain(this.creatorId, this._id).catch((err) => {
       console.log(err);
     });
     return next();
