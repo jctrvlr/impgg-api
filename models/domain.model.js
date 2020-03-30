@@ -2,6 +2,8 @@ const mongoose = require('mongoose');
 const httpStatus = require('http-status');
 const { omitBy, isNil } = require('lodash');
 const APIError = require('../utils/APIError');
+const User = require('../models/user.model');
+const Link = require('../models/link.model');
 
 /**
  * Domain Schema
@@ -63,10 +65,14 @@ domainSchema.pre('save', async (next) => {
   }
 });
 
-domainSchema.pre('remove', async (next) => {
+domainSchema.pre('deleteOne', async function preDeleteOne(next) {
   try {
-    await this.model('Link').remove({ domain: this._id }).exec();
-    await this.model('User').removeDomain(this.creatorId, this._id);
+    await Link.deleteMany({ domain: this._id }).catch((err) => {
+      console.log(err);
+    });
+    await User.removeDomain(this.creatorId, this._id).catch((err) => {
+      console.log(err);
+    });
     return next();
   } catch (error) {
     return next(error);
