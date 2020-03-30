@@ -65,7 +65,7 @@ domainSchema.pre('save', async (next) => {
 
 domainSchema.pre('remove', async (next) => {
   try {
-    await this.model('Link').remove({ domain: this._id });
+    await this.model('Link').remove({ domain: this._id }).exec();
     await this.model('User').removeDomain(this.creatorId, this._id);
     return next();
   } catch (error) {

@@ -243,7 +243,7 @@ exports.list = async (req, res, next) => {
 };
 
 /**
- * Delete link
+ * Delete domain
  * @public
  */
 exports.remove = (req, res, next) => {
