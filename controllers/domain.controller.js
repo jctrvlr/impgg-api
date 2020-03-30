@@ -97,6 +97,7 @@ exports.deleteDomain = async (req, res, next) => {
   try {
     const { domainId } = req.body;
     const domainFound = await Domain.findById(domainId);
+
     let user;
 
     const deleted = await Domain.remove({ _id: domainId });
