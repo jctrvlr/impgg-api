@@ -65,7 +65,10 @@ exports.login = async (req, res, next) => {
 exports.auth = async (req, res, next) => {
   try {
     return User.authUser(req.body, req.user)
-      .then(authenticated => res.json(authenticated))
+      .then((authenticated) => {
+        res.status(httpStatus.OK);
+        res.json(authenticated);
+      })
       .catch(err => next(err));
   } catch (error) {
     return next(error);

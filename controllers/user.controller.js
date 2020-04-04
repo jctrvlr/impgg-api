@@ -97,7 +97,7 @@ exports.changePassword = async (req, res, next) => {
   const { password } = req.body;
   user.password = password;
   user.save()
-    .then(() => res.json(true))
+    .then(() => res.status(httpStatus.OK))
     .catch(e => next(User.checkDuplicateEmail(e)));
 };
 
