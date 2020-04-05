@@ -83,7 +83,6 @@ router
    *
    * @apiError (Bad Request 400) Validation Error Some parameters may contain invalid values
    */
-  // TODO: Figure out how to create link connected to user
   .post(authorize(LOGGED_USER), validate(createDomain), controller.create)
   /**
    * @api {put} v1/domain Update Domain

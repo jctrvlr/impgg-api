@@ -22,13 +22,24 @@ exports.load = async (req, res, next, id) => {
  * Get user
  * @public
  */
-exports.get = (req, res) => res.json(req.locals.user.transform());
+exports.get = async (req, res) => {
+  const userTransformed = await req.locals.user.populate('domains');
+  res.json(userTransformed);
+};
 
 /**
  * Get logged in user info
  * @public
  */
-exports.loggedIn = (req, res) => res.json(req.user.transform());
+exports.loggedIn = async (req, res, next) => {
+  try {
+    const userTransformed = await User.findOne({ _id: req.user._id }).populate('domains');
+    res.json(userTransformed);
+  } catch (err) {
+    console.log(err);
+    next(err);
+  }
+};
 
 /**
  * Create new user
