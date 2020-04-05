@@ -40,13 +40,11 @@ exports.checkDNS = async (req, res, next) => {
     // See if domain exists in database
     const domainFound = await Domain.find({ uri: domain }).exec();
     const authed = req.headers && req.headers.authorization && req.headers.authorization === dnsKey;
-    console.log(domain, domainFound, authed);
     if (domainFound && authed) {
       // Check status
       if (domainFound[0].status === 1) {
         domainFound[0].status = 2;
         const status = await domainFound[0].save();
-        console.log('status', status);
         res.status(httpStatus.OK);
         res.json(status);
       } else {
@@ -68,12 +66,10 @@ exports.checkDNS = async (req, res, next) => {
 exports.archiveDomain = async (req, res, next) => {
   try {
     const { domainId } = req.body;
-    console.log('inside archiveDomain: ', domainId);
 
     Domain.archive(domainId, req.user)
       .then((_domain) => {
         res.status(httpStatus.OK);
-        console.log('inside archiveDomain', _domain.transform());
         res.json(_domain.transform());
       })
       .catch((err) => {
@@ -108,7 +104,7 @@ exports.deleteDomain = async (req, res, next) => {
     res.status(httpStatus.OK);
     res.json(user);
   } catch (error) {
-    console.log(error);
+    logger.error(error);
     next(error);
   }
 };
@@ -129,6 +125,7 @@ exports.checkURI = async (req, res, next) => {
       res.json(checkDup);
     }
   } catch (error) {
+    logger.error(error);
     next(error);
   }
 };

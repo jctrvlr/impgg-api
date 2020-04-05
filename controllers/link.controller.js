@@ -103,12 +103,10 @@ exports.getLink = async (req, res, next) => {
 exports.archiveLink = async (req, res, next) => {
   try {
     const { linkId } = req.body;
-    console.log('inside archiveLink: ', linkId);
 
     Link.archive(linkId, req.user)
       .then((_link) => {
         res.status(httpStatus.OK);
-        console.log('inside archiveLink', _link.transform());
         res.json(_link.transform());
       })
       .catch((err) => {
@@ -131,7 +129,6 @@ exports.archiveLink = async (req, res, next) => {
 exports.deleteLink = async (req, res, next) => {
   try {
     const { linkId } = req.body;
-    console.log('inside deleteLink: ', linkId);
 
     const pageViewCount = await PageView.deleteMany({ linkId });
 
@@ -191,9 +188,11 @@ exports.createPub = async (req, res, next) => {
     } catch (err) {
       logger.error(err);
     }
+    const linkFound = await Link.findOne({ url: uri });
 
-    // TODO: CHECK IF USER HAS CREATED A SHORTLINK FOR URI already
-    if (await Link.checkDuplicateShortLink(sLink)) {
+    if (linkFound) {
+      res.json(linkFound.transform());
+    } else if (await Link.checkDuplicateShortLink(sLink)) {
       res.status(httpStatus.BAD_REQUEST);
       res.json({ error: 'Short link already exists' });
     } else {
@@ -206,7 +205,7 @@ exports.createPub = async (req, res, next) => {
       // TODO: Setup if statements to check if youtube, twitter, facebook,
       // video, etc. or default to `website`
       const linkType = 'website';
-      const domain = await Domain.findOne({ uri: env === 'development' ? 'http://localhost:3001' : 'imp.gg' });
+      const domain = await Domain.findOne({ uri: env === 'development' ? 'localhost:3001' : 'imp.gg' });
 
       const link = new Link({
         url: uri,
@@ -283,7 +282,6 @@ exports.create = async (req, res, next) => {
     res.status(httpStatus.CREATED);
     res.json(savedLink.transform());
   } catch (error) {
-    console.log(error);
     next(error);
   }
 };
@@ -348,7 +346,6 @@ exports.list = async (req, res, next) => {
       res.status(httpStatus.NO_CONTENT);
       res.json(links);
     } else {
-      console.log(links);
       // '_id','creatorId', 'url', 'type', 'shortLink', 'pageTitle', 'createdAt', 'updatedAt'
       // eslint-disable-next-line no-restricted-syntax
       Promise.all(links.map(async (link) => {
