@@ -103,12 +103,10 @@ exports.getLink = async (req, res, next) => {
 exports.archiveLink = async (req, res, next) => {
   try {
     const { linkId } = req.body;
-    console.log('inside archiveLink: ', linkId);
 
     Link.archive(linkId, req.user)
       .then((_link) => {
         res.status(httpStatus.OK);
-        console.log('inside archiveLink', _link.transform());
         res.json(_link.transform());
       })
       .catch((err) => {
@@ -131,7 +129,6 @@ exports.archiveLink = async (req, res, next) => {
 exports.deleteLink = async (req, res, next) => {
   try {
     const { linkId } = req.body;
-    console.log('inside deleteLink: ', linkId);
 
     const pageViewCount = await PageView.deleteMany({ linkId });
 
@@ -283,7 +280,6 @@ exports.create = async (req, res, next) => {
     res.status(httpStatus.CREATED);
     res.json(savedLink.transform());
   } catch (error) {
-    console.log(error);
     next(error);
   }
 };
@@ -348,7 +344,6 @@ exports.list = async (req, res, next) => {
       res.status(httpStatus.NO_CONTENT);
       res.json(links);
     } else {
-      console.log(links);
       // '_id','creatorId', 'url', 'type', 'shortLink', 'pageTitle', 'createdAt', 'updatedAt'
       // eslint-disable-next-line no-restricted-syntax
       Promise.all(links.map(async (link) => {

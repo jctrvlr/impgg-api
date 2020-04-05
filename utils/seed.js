@@ -1,9 +1,10 @@
 const Domain = require('../models/domain.model');
 const { env } = require('../config/vars');
+const logger = require('../config/logger');
 
 Domain.countDocuments({}, (err, count) => {
   if (err) throw err;
-  console.log('Seeding - Number of domains: ', count);
+  logger.info('Seeding - Number of domains: ', count);
 
   if (count <= 0) {
     const defaultDomain = {

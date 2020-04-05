@@ -33,7 +33,6 @@ exports.register = async (req, res, next) => {
     const savedUser = await user.save();
 
     const userTransformed = await User.findOne({ _id: savedUser._id }).populate('domains');
-    console.log(userTransformed);
     const token = generateTokenResponse(savedUser, savedUser.token());
     res.status(httpStatus.CREATED);
     return res.json({ token, user: userTransformed });

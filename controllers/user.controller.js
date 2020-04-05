@@ -36,7 +36,6 @@ exports.loggedIn = async (req, res, next) => {
     const userTransformed = await User.findOne({ _id: req.user._id }).populate('domains');
     res.json(userTransformed);
   } catch (err) {
-    console.log(err);
     next(err);
   }
 };
