@@ -203,7 +203,7 @@ exports.createPub = async (req, res, next) => {
       // TODO: Setup if statements to check if youtube, twitter, facebook,
       // video, etc. or default to `website`
       const linkType = 'website';
-      const domain = await Domain.findOne({ uri: env === 'development' ? 'http://localhost:3001' : 'imp.gg' });
+      const domain = await Domain.findOne({ uri: env === 'development' ? 'localhost:3001' : 'imp.gg' });
 
       const link = new Link({
         url: uri,
