@@ -188,9 +188,11 @@ exports.createPub = async (req, res, next) => {
     } catch (err) {
       logger.error(err);
     }
+    const linkFound = await Link.findOne({ url: uri });
 
-    // TODO: CHECK IF USER HAS CREATED A SHORTLINK FOR URI already
-    if (await Link.checkDuplicateShortLink(sLink)) {
+    if (linkFound) {
+      res.json(linkFound.transform());
+    } else if (await Link.checkDuplicateShortLink(sLink)) {
       res.status(httpStatus.BAD_REQUEST);
       res.json({ error: 'Short link already exists' });
     } else {
