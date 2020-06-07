@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const httpStatus = require('http-status');
 const { omitBy, isNil } = require('lodash');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const moment = require('moment-timezone');
 const jwt = require('jwt-simple');
 const uuidv4 = require('uuid/v4');
@@ -165,6 +166,11 @@ userSchema.method({
 
   async passwordMatches(password) {
     return bcrypt.compare(password, this.password);
+  },
+
+  generatePasswordReset() {
+    this.passwordResetToken = `${crypto.randomBytes(40).toString('hex')}`;
+    this.passwordResetExpires = moment().add(1, 'hour').toDate();
   },
 });
 

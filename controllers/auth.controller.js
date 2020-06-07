@@ -1,10 +1,16 @@
 const httpStatus = require('http-status');
 const moment = require('moment-timezone');
+const sgMail = require('@sendgrid/mail');
+
 const User = require('../models/user.model');
 const RefreshToken = require('../models/refreshToken.model');
 const { jwtExpirationInterval } = require('../config/vars');
 const Domain = require('../models/domain.model');
-const { env } = require('../config/vars');
+const {
+  env, SENDGRID_API_KEY, fromEmail, baseUrl,
+} = require('../config/vars');
+
+sgMail.setApiKey(SENDGRID_API_KEY);
 
 /**
 * Returns a formated object with tokens
@@ -105,6 +111,101 @@ exports.refresh = async (req, res, next) => {
     const { user, accessToken } = await User.findAndGenerateToken({ email, refreshObject });
     const response = generateTokenResponse(user, accessToken);
     return res.json(response);
+  } catch (error) {
+    return next(error);
+  }
+};
+
+/**
+ * Returns jwt token if valid username and password is provided
+ * @public
+ */
+exports.recoverPassword = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    return User.findOne({ email }, {
+      email: 1, profile: 1, passwordResetToken: 1, passwordResetExpires: 1,
+    })
+      .then((user) => {
+        if (!user) return res.status(200).json({ message: 'A reset email has been sent if the email address you provided exists.' });
+
+        // Generate and set password reset token/expire
+        user.generatePasswordReset();
+
+        // Save updated user object
+        return user.save()
+          .then((_user) => {
+            // Send email
+            console.log(_user);
+            const link = `http://${req.headers.host}/v1/auth/reset/${_user.passwordResetToken}`;
+            const mailOptions = {
+              to: _user.email,
+              from: fromEmail,
+              subject: 'Password change request',
+              text: `Hi ${_user.profile.firstName} \n 
+            Please click on the following link ${link} to reset your password. \n\n 
+            If you did not request this, please ignore this email and your password will remain unchanged.\n`,
+            };
+            // eslint-disable-next-line no-unused-vars
+            return sgMail.send(mailOptions, (error, _result) => {
+              if (error) return res.status(500).json({ message: error.message });
+
+              return res.status(200).json({ message: `A reset email has been sent to ${user.email}.` });
+            });
+          })
+          .catch((err) => {
+            console.log(err);
+            return res.status(500).json({ message: err.message });
+          });
+      }).catch(err => res.status(500).json({ message: err.message }));
+  } catch (error) {
+    return next(error);
+  }
+};
+
+/**
+ * Returns jwt token if valid username and password is provided
+ * @public
+ */
+exports.reset = async (req, res, next) => {
+  try {
+    return User.findOne({
+      passwordResetToken: req.params.token,
+      passwordResetExpires: { $gt: Date.now() },
+    }, {
+      email: 1, profile: 1, passwordResetToken: 1, passwordResetExpires: 1,
+    })
+      .then((user) => {
+        if (!user) return res.status(401).json({ message: 'Password reset token is invalid or has expired.' });
+        // Redirect user to form with the email address
+        return res.redirect(302, `${baseUrl}/password/reset?tok=${user.passwordResetToken}`);
+      })
+      .catch(err => res.status(500).json({ message: err.message }));
+  } catch (error) {
+    return next(error);
+  }
+};
+
+/**
+ * Saves new password.
+ * @public
+ */
+exports.resetPassword = async (req, res, next) => {
+  try {
+    const { token, password } = req.body;
+
+    return User.findOne({
+      passwordResetToken: token,
+      passwordResetExpires: { $gt: Date.now() },
+    }, {
+      email: 1, profile: 1, passwordResetToken: 1, passwordResetExpires: 1,
+    }).then((user) => {
+      // eslint-disable-next-line no-param-reassign
+      user.password = password;
+      return user.save()
+        .then(() => res.status(httpStatus.OK).json({ message: 'Password is saved' }))
+        .catch(e => next(User.checkDuplicateEmail(e)));
+    });
   } catch (error) {
     return next(error);
   }
