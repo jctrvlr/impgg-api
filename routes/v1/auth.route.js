@@ -8,6 +8,9 @@ const {
   register,
   oAuth,
   refresh,
+  recover,
+  reset,
+  resetPassword,
 } = require('../../validations/auth.validation');
 
 const router = express.Router();
@@ -120,6 +123,61 @@ router.route('/refresh-token')
  * TODO: POST /v1/auth/reset-password
  */
 
+/**
+ * @api {post} v1/auth/recover Recover Password
+ * @apiDescription Recover password
+ * @apiVersion 1.0.0
+ * @apiName RecoverPassword
+ * @apiGroup Auth
+ * @apiPermission public
+ *
+ * @apiParam  {String}  email         User's email
+ *
+ * @apiSuccess {String}  tokenType     Access Token's type
+ *
+ * @apiError (Bad Request 400)  ValidationError  Some parameters may contain invalid values
+ * @apiError (Unauthorized 401)  Unauthorized     Incorrect email or refreshToken
+ */
+router.route('/recover')
+  .post(validate(recover), controller.recoverPassword);
+
+/**
+ * @api {post} v1/auth/reset Reset Password
+ * @apiDescription Reset password
+ * @apiVersion 1.0.0
+ * @apiName ResetPassword
+ * @apiGroup Auth
+ * @apiPermission public
+ *
+ * @apiParam  {String}  token         User's passwordResetToken
+ *
+ * @apiSuccess {String}  tokenType     Access Token's type
+ *
+ * @apiError (Bad Request 400)  ValidationError  Some parameters may contain invalid values
+ * @apiError (Unauthorized 401)  Unauthorized     Incorrect email or refreshToken
+ */
+router.route('/reset/:token')
+  .get(validate(reset), controller.reset);
+
+/**
+ * @api {post} v1/auth/reset-password Reset Password to new password
+ * @apiDescription Reset password
+ * @apiVersion 1.0.0
+ * @apiName ResetPassword
+ * @apiGroup Auth
+ * @apiPermission public
+ *
+ * @apiParam  {String}  token         User's passwordResetToken
+ * @apiParam  {String}  password      User's new password
+
+ *
+ * @apiSuccess {Redirect 301} 301 Redirect to link URI
+ *
+ * @apiError (Bad Request 400)  ValidationError  Some parameters may contain invalid values
+ * @apiError (Unauthorized 401)  Unauthorized     Incorrect email or refreshToken
+ */
+router.route('/reset-password')
+  .post(validate(resetPassword), controller.resetPassword);
 
 /**
  * @api {post} v1/auth/facebook Facebook Login
