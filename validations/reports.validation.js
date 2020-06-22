@@ -4,8 +4,9 @@ module.exports = {
 
   // GET /v1/reports/click
   clickReport: {
-    query: {
+    body: {
       limit: Joi.number().min(1),
+      linkFilter: Joi.array(),
     },
   },
 

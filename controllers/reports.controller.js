@@ -1,7 +1,9 @@
+/* eslint-disable no-unused-vars */
 /* eslint-disable no-param-reassign */
 const httpStatus = require('http-status');
 const sgMail = require('@sendgrid/mail');
-const json2csv = require('json2csv');
+const json2csv = require('json2csv').parse;
+const moment = require('moment');
 
 const logger = require('../config/logger');
 const PageView = require('../models/pageView.model');
@@ -11,25 +13,17 @@ const {
 } = require('../config/vars');
 
 sgMail.setApiKey(SENDGRID_API_KEY);
+
 /**
  * Get click report and send to users email
  * @public
- * {
- *   linkName,
- *   referral,
- *   ip,
- *   userAgent,
- *   device,
- *   country,
- *   region,
- *   linkCreator,
- * }
  */
 exports.clickReport = async (req, res, next) => {
   try {
     const { user } = req;
     const { limit, linkFilter } = req.body;
 
+    // TODO: Send this to a report worker
     // Get pageViews
     const data = await PageView.find({ linkId: { $in: linkFilter } }, {}, {
       sort: { created_at: -1 },
@@ -38,15 +32,14 @@ exports.clickReport = async (req, res, next) => {
       populate: {
         path: 'creatorId',
       },
-    }).limit(limit);
+    }).limit(limit).lean();
 
     // Convert JSON to CSV data
     // Header/fields
-    const fields = ['linkId.url', 'referral', 'ip', 'userAgent', 'device', 'location.country', 'location.stateRegion', 'linkId.creatorId.email'];
-    const fieldnames = ['Link Name', 'Referral', 'IP Address', 'User Agent', 'Device', 'Country', 'Region', 'Link Creator Email'];
+    const fields = [{ label: 'Link Name', value: 'linkId.url' }, { label: 'Referral', value: 'ref' }, { label: 'IP Address', value: 'ip' }, { label: 'Device', value: 'device' }, { label: 'Platform', value: 'userAgent.platform' }, { label: 'Browser', value: 'userAgent.browser' }, { label: 'Country', value: 'location.country' }, { label: 'Region', value: 'location.stateRegion' }, { label: 'Link Creator Email', value: 'linkId.creatorId.email' }, { label: 'User Agent', value: 'userAgent' }];
+    const fieldnames = ['Link Name', 'Referral', 'IP Address', 'Device', 'Country', 'Region', 'Link Creator Email', 'User Agent'];
+    const csvData = json2csv(data, { fields, fieldnames });
 
-    const csvData = json2csv({ data, fields, fieldnames });
-    const timestamp = Date.now();
     const mailOptions = {
       to: user.email,
       from: fromEmail,
@@ -57,17 +50,23 @@ exports.clickReport = async (req, res, next) => {
     ImpGG Team`,
       attachments: [
         {
-          content: csvData,
-          filename: `clickReport-${timestamp}.csv`,
+          content: Buffer.from(csvData).toString('base64'),
+          filename: `clickReport-${moment().toISOString()}.csv`,
           type: 'text/csv',
           disposition: 'attachment',
         },
       ],
     };
-    sgMail.send(mailOptions, (error, _result) => {
-      if (error) return res.status(500).json({ message: error.message });
+
+    return sgMail.send(mailOptions, (error, _result) => {
+      if (error) {
+        console.log(error);
+        return res.status(500).json({ message: error.message });
+      }
+      logger.info(`Sent click report to ${user.email}`);
+      return res.status(httpStatus.OK).json({ message: 'Request received.' });
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };

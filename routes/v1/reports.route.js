@@ -1,6 +1,6 @@
 const express = require('express');
 const validate = require('express-validation');
-const controller = require('../../controllers/domain.controller');
+const controller = require('../../controllers/reports.controller');
 const { authorize, LOGGED_USER } = require('../../middlewares/auth');
 const {
   clickReport,
@@ -24,6 +24,6 @@ router
    *
    * @apiSuccess (OK 200) {Boolean} ReportSent
    */
-  .get(authorize(LOGGED_USER), validate(clickReport), controller.clickReport);
+  .post(authorize(LOGGED_USER), validate(clickReport), controller.clickReport);
 
 module.exports = router;

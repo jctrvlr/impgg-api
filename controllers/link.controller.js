@@ -42,7 +42,7 @@ exports.get = async (req, res, next) => {
         ip: req.ip,
         userAgent: req.useragent,
         device,
-        ref: req.headers.referer,
+        ref: req.headers.referer || 'Direct',
         location: {
           city: 'N/A',
           country: 'N/A',
