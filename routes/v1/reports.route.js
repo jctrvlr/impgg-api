@@ -21,6 +21,7 @@ router
    * @apiHeader {String} Authorization   User's access token
    *
    * @apiParam {String}    [limit]    limit
+   * @apiParam {Array}     [linkFilter] linkFilter
    *
    * @apiSuccess (OK 200) {Boolean} ReportSent
    */
