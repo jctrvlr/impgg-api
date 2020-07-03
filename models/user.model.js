@@ -18,7 +18,7 @@ const roles = ['user', 'admin'];
 /**
  * Subscription Types
  */
-const subscriptions = ['personal', 'pro', 'enterprise', 'admin'];
+const subscriptions = ['pro', 'enterprise', 'admin'];
 
 /**
  * User Schema
@@ -97,7 +97,6 @@ const userSchema = new mongoose.Schema({
     },
     startTimestamp: {
       type: Date,
-      default: Date.now,
     },
     endTimestamp: {
       type: Date,
