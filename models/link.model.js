@@ -20,6 +20,9 @@ const linkSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Domain',
   },
+  ref: {
+    type: String,
+  },
   pageTitle: { type: String },
   type: {
     type: String,
