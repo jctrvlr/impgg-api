@@ -97,6 +97,102 @@ exports.oAuth = async (req, res, next) => {
   }
 };
 
+exports.facebook = async (req, res, next) => {
+  try {
+    const { user } = req;
+    const _user = new User({
+      email: user.email,
+    });
+    // Add default domain
+    const domain = await Domain.findOne({ uri: env === 'development' ? 'localhost:3001' : 'imp.gg' });
+    _user.domains.push(domain._id);
+
+    const savedUser = await _user.save();
+
+    const userTransformed = await User.findOne({ _id: savedUser._id }).populate('domains');
+    const token = generateTokenResponse(savedUser, savedUser.token());
+    res.status(httpStatus.CREATED);
+    return res.json({ token, user: userTransformed });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+exports.google = async (req, res, next) => {
+  try {
+    const { user } = req;
+    const withEmail = await User.find({ email: user.email });
+    const withId = await User.find({ 'services.google': user.id });
+    // If both email and ID found and same account then generate token and return
+    // If both found but different accounts return error
+    // If only withEmail found then add ID to it then generate token and return
+    // If only withId found then add email to it then generate token and return
+    // If neither found then create new account with provided info then generate token and return
+
+    if (withEmail && withId && (withEmail._id === withId._id)) {
+      // Generate token and return
+      const userTransformed = await User.findOne({ _id: withEmail._id }).populate('domains');
+      const token = generateTokenResponse(withEmail, withEmail.token());
+      res.status(httpStatus.OK);
+      return res.json({ token, user: userTransformed });
+    } if (withEmail && withId && withEmail._id !== withId._id) {
+      // return error
+      return res.status(500).json({ message: 'You have already linked your Google account with a different ImpGG account.' });
+    } if (withEmail && !withId) {
+      // Add ID to withEmail then generate token and return
+      withEmail.services.google = user.id;
+      const savedUser = await withEmail.save();
+
+      const userTransformed = await User.findOne({ _id: savedUser._id }).populate('domains');
+      const token = generateTokenResponse(savedUser, savedUser.token());
+      res.status(httpStatus.CREATED);
+      return res.json({ token, user: userTransformed });
+    } if (withId && !withEmail) {
+      // Add email to withId and generate token and return
+      // Add ID to withEmail then generate token and return
+      withId.email = user._json.email;
+      const savedUser = await withEmail.save();
+
+      const userTransformed = await User.findOne({ _id: savedUser._id }).populate('domains');
+      const token = generateTokenResponse(savedUser, savedUser.token());
+      res.status(httpStatus.CREATED);
+      return res.json({ token, user: userTransformed });
+    }
+    const _user = new User({
+      email: user.email,
+    });
+      // Add default domain
+    const domain = await Domain.findOne({ uri: env === 'development' ? 'localhost:3001' : 'imp.gg' });
+    _user.domains.push(domain._id);
+
+    const savedUser = await _user.save();
+
+    const userTransformed = await User.findOne({ _id: savedUser._id }).populate('domains');
+    const token = generateTokenResponse(savedUser, savedUser.token());
+    res.status(httpStatus.CREATED);
+    return res.json({ token, user: userTransformed });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+exports.twitch = async (req, res, next) => {
+  try {
+    const { user } = req;
+
+    const userTransformed = await User.findOne({ _id: user._id }).populate('domains');
+    const token = generateTokenResponse(user, user.token());
+    res.status(httpStatus.OK);
+
+    res.header('Content-Type', 'application/json');
+    res.header('Access-Control-Allow-Origin', ['*']);
+
+    return res.json({ token, user: userTransformed });
+  } catch (error) {
+    return next(error);
+  }
+};
+
 /**
  * Returns a new jwt when given a valid refresh token
  * @public

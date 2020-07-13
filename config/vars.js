@@ -14,6 +14,10 @@ module.exports = {
   SENDGRID_API_KEY: process.env.SENDGRID_API_KEY,
   fromEmail: process.env.FROM_EMAIL,
   baseUrl: process.env.BASE_URL,
+  GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
+  GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
+  TWITCH_CLIENT_ID: process.env.TWITCH_CLIENT_ID,
+  TWITCH_CLIENT_SECRET: process.env.TWITCH_CLIENT_SECRET,
   mongo: {
     uri: process.env.NODE_ENV === 'test' ? process.env.MONGO_URI_TESTS : process.env.MONGO_URI,
   },

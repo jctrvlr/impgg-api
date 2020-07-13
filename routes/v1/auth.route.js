@@ -1,12 +1,12 @@
 const express = require('express');
+const passport = require('passport');
 const validate = require('express-validation');
 const controller = require('../../controllers/auth.controller');
 const { authorize, LOGGED_USER } = require('../../middlewares/auth');
-const oAuthLogin = require('../../middlewares/auth').oAuth;
+const { baseUrl } = require('../../config/vars');
 const {
   login,
   register,
-  oAuth,
   refresh,
   recover,
   reset,
@@ -187,19 +187,14 @@ router.route('/reset-password')
  * @apiGroup Auth
  * @apiPermission public
  *
- * @apiParam  {String}  access_token  Facebook's access_token
- *
- * @apiSuccess {String}  tokenType     Access Token's type
- * @apiSuccess {String}  accessToken   Authorization Token
- * @apiSuccess {String}  refreshToken  Token to get a new accessToken after expiration time
- * @apiSuccess {Number}  expiresIn     Access Token's expiration time in miliseconds
- *
  * @apiError (Bad Request 400)  ValidationError  Some parameters may contain invalid values
  * @apiError (Unauthorized 401)  Unauthorized    Incorrect access_token
  */
-router.route('/facebook')
-  .post(validate(oAuth), oAuthLogin('facebook'), controller.oAuth);
 
+/*
+router.route('/facebook')
+  .get(passport.authenticate('facebook', { scope: 'email' }));
+*/
 /**
  * @api {post} v1/auth/google Google Login
  * @apiDescription Login with google. Creates a new user if it does not exist
@@ -208,18 +203,68 @@ router.route('/facebook')
  * @apiGroup Auth
  * @apiPermission public
  *
- * @apiParam  {String}  access_token  Google's access_token
- *
- * @apiSuccess {String}  tokenType     Access Token's type
- * @apiSuccess {String}  accessToken   Authorization Token
- * @apiSuccess {String}  refreshToken  Token to get a new accpessToken after expiration time
- * @apiSuccess {Number}  expiresIn     Access Token's expiration time in miliseconds
- *
  * @apiError (Bad Request 400)  ValidationError  Some parameters may contain invalid values
  * @apiError (Unauthorized 401)  Unauthorized    Incorrect access_token
  */
 router.route('/google')
-  .post(validate(oAuth), oAuthLogin('google'), controller.oAuth);
+  .get(passport.authenticate('google', { scope: ['profile', 'email'] }));
 
+/**
+ * @api {post} v1/auth/twitch Twitch Login
+ * @apiDescription Login with twitch. Creates a new user if it does not exist
+ * @apiVersion 1.0.0
+ * @apiName TwitchLogin
+ * @apiGroup Auth
+ * @apiPermission public
+ *
+ * @apiError (Bad Request 400)  ValidationError  Some parameters may contain invalid values
+ * @apiError (Unauthorized 401)  Unauthorized    Incorrect access_token
+ */
+router.route('/twitch')
+  .get(passport.authenticate('twitch'));
+
+
+/**
+ * @api {post} v1/auth/facebook/callback Facebook Login
+ * @apiDescription Login with facebook. Creates a new user if it does not exist
+ * @apiVersion 1.0.0
+ * @apiName FacebookLoginCallback
+ * @apiGroup Auth
+ * @apiPermission public
+ *
+ * @apiError (Bad Request 400)  ValidationError  Some parameters may contain invalid values
+ * @apiError (Unauthorized 401)  Unauthorized    Incorrect access_token
+ */
+/*
+router.route('/facebook/callback')
+  .get(passport.authenticate('facebook', { scope: 'email' }), controller.facebook);
+*/
+/**
+* @api {post} v1/auth/google/callback Google Login
+* @apiDescription Login with google. Creates a new user if it does not exist
+* @apiVersion 1.0.0
+* @apiName GoogleLoginCallback
+* @apiGroup Auth
+* @apiPermission public
+*
+* @apiError (Bad Request 400)  ValidationError  Some parameters may contain invalid values
+* @apiError (Unauthorized 401)  Unauthorized    Incorrect access_token
+*/
+router.route('/google/callback')
+  .get(passport.authenticate('google', { scope: ['profile', 'email'] }), controller.google);
+
+/**
+ * @api {post} v1/auth/twitch/callback Twitch Login
+ * @apiDescription Login with twitch. Creates a new user if it does not exist
+ * @apiVersion 1.0.0
+ * @apiName TwitchLoginCallback
+ * @apiGroup Auth
+ * @apiPermission public
+ *
+ * @apiError (Bad Request 400)  ValidationError  Some parameters may contain invalid values
+ * @apiError (Unauthorized 401)  Unauthorized    Incorrect access_token
+ */
+router.route('/twitch/callback')
+  .get(passport.authenticate('twitch', { failureRedirect: `${baseUrl}/login` }), controller.twitch);
 
 module.exports = router;
