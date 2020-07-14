@@ -47,6 +47,9 @@ const twitchStrategyConfig = new TwitchStrategy({
   scope: ['user_read', 'user:read:email'],
   passReqToCallback: true,
 }, (req, accessToken, refreshToken, params, profile, done) => {
+  if (profile && !profile.email) {
+    done({ message: 'You must confirm your Twitch email before you can create an account.' });
+  }
   if (req.user) {
     User.findOne({ 'services.twitch': profile.id }, (err, existingUser) => {
       if (err) { return done(err); }
@@ -95,13 +98,13 @@ const twitchStrategyConfig = new TwitchStrategy({
               done(err, existingEmailUser);
             });
           } else {
-            console.log('There is already an account using this email address. Sign in to that account and link it with Twtich manually from Account Settings.');
-            done(err);
+            done({ message: 'There is already an ImpGG account using this email address.' });
           }
         } else {
           const user = new User();
           // Add default domain
           Domain.findOne({ uri: env === 'development' ? 'localhost:3001' : 'imp.gg' }, (err, domain) => {
+            console.log('profile: ', profile);
             user.domains.push(domain._id);
             user.email = profile.email;
             user.services.twitch = profile.id;
