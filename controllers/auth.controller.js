@@ -97,6 +97,63 @@ exports.oAuth = async (req, res, next) => {
   }
 };
 
+exports.facebook = async (req, res, next) => {
+  try {
+    const { user } = req;
+    const _user = new User({
+      email: user.email,
+    });
+    // Add default domain
+    const domain = await Domain.findOne({ uri: env === 'development' ? 'localhost:3001' : 'imp.gg' });
+    _user.domains.push(domain._id);
+
+    const savedUser = await _user.save();
+
+    const userTransformed = await User.findOne({ _id: savedUser._id }).populate('domains');
+    const token = generateTokenResponse(savedUser, savedUser.token());
+    res.status(httpStatus.CREATED);
+    return res.json({ token, user: userTransformed });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+exports.google = async (req, res, next) => {
+  try {
+    const { user } = req;
+
+    console.log(user);
+
+    const userTransformed = await User.findOne({ _id: user._id }).populate('domains');
+    const token = generateTokenResponse(user, user.token());
+    res.status(httpStatus.OK);
+
+    res.header('Content-Type', 'application/json');
+    res.header('Access-Control-Allow-Origin', ['*']);
+
+    return res.json({ token, user: userTransformed });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+exports.twitch = async (req, res, next) => {
+  try {
+    const { user } = req;
+
+    const userTransformed = await User.findOne({ _id: user._id }).populate('domains');
+    const token = generateTokenResponse(user, user.token());
+    res.status(httpStatus.OK);
+
+    res.header('Content-Type', 'application/json');
+    res.header('Access-Control-Allow-Origin', ['*']);
+
+    return res.json({ token, user: userTransformed });
+  } catch (error) {
+    return next(error);
+  }
+};
+
 /**
  * Returns a new jwt when given a valid refresh token
  * @public
