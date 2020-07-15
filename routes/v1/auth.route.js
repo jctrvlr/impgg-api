@@ -207,7 +207,7 @@ router.route('/facebook')
  * @apiError (Unauthorized 401)  Unauthorized    Incorrect access_token
  */
 router.route('/google')
-  .get(passport.authenticate('google', { scope: ['profile', 'email'] }));
+  .get(passport.authenticate('google', { scope: ['profile', 'email'], accessType: 'offline', prompt: 'consent' }));
 
 /**
  * @api {post} v1/auth/twitch Twitch Login
@@ -251,7 +251,7 @@ router.route('/facebook/callback')
 * @apiError (Unauthorized 401)  Unauthorized    Incorrect access_token
 */
 router.route('/google/callback')
-  .get(passport.authenticate('google', { scope: ['profile', 'email'] }), controller.google);
+  .get(passport.authenticate('google', { failureRedirect: `${baseUrl}/login` }), controller.google);
 
 /**
  * @api {post} v1/auth/twitch/callback Twitch Login

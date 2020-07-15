@@ -51,7 +51,7 @@ const twitchStrategyConfig = new TwitchStrategy({
     done({ message: 'You must confirm your Twitch email before you can create an account.' });
   }
   if (req.user) {
-    User.findOne({ 'services.twitch': profile.id }, (err, existingUser) => {
+    User.findOne({ 'services.google': profile.id }, (err, existingUser) => {
       if (err) { return done(err); }
       if (existingUser && (existingUser.id !== req.user.id)) {
         done(err);
@@ -130,16 +130,96 @@ const twitchStrategyConfig = new TwitchStrategy({
 passport.use(twitchStrategyConfig);
 refresh.use('twitch', twitchStrategyConfig);
 
-passport.use(new GoogleStrategy({
+const googleStrategyConfig = new GoogleStrategy({
   clientID: GOOGLE_CLIENT_ID,
   clientSecret: GOOGLE_CLIENT_SECRET,
-  callbackURL: `${baseUrl}/v1/auth/google/callback`,
+  callbackURL: `${baseUrl}/auth/callback/google`,
+  passReqToCallback: true,
 },
-((accessToken, refreshToken, profile, done) => {
-  // console.log(accessToken, refreshToken, profile)
-  console.log('GOOGLE BASED OAUTH VALIDATION GETTING CALLED');
-  return done(null, profile);
-})));
+((req, accessToken, refreshToken, params, profile, done) => {
+  if (profile && !profile.emails[0].value) {
+    done({ message: 'You must confirm your Google email before you can create an account.' });
+  }
+  if (req.user) {
+    User.findOne({ 'services.twitch': profile.id }, (err, existingUser) => {
+      if (err) { return done(err); }
+      if (existingUser && (existingUser.id !== req.user.id)) {
+        done(err);
+      } else {
+        User.findById(req.user.id, (err, user) => {
+          if (err) { return done(err); }
+          user.services.google = profile.id;
+          user.tokens.push({
+            kind: 'google',
+            accessToken,
+            accessTokenExpires: moment().add(params.expires_in, 'seconds').format(),
+            refreshToken,
+          });
+          user.profile.firstName = user.profile.firstName || profile.name.givenName;
+          user.profile.lastName = user.profile.lastName || profile.name.familyName;
+          user.email = user.email || profile.emails[0].value;
+          user.profile.picture = user.profile.picture || profile.photos[0].value;
+          user.save((err) => {
+            done(err, user);
+          });
+        });
+      }
+    });
+  } else {
+    User.findOne({ 'services.google': profile.id }, (err, existingUser) => {
+      if (err) { return done(err); }
+      if (existingUser) {
+        return done(null, existingUser);
+      }
+      User.findOne({ email: profile.emails[0].value }, (err, existingEmailUser) => {
+        if (err) { return done(err); }
+        if (existingEmailUser) {
+          if (!existingEmailUser.services.google) {
+            existingEmailUser.services.google = profile.id;
+            existingEmailUser.tokens.push({
+              kind: 'google',
+              accessToken,
+              accessTokenExpires: moment().add(params.expires_in, 'seconds').format(),
+              refreshToken,
+            });
+            existingEmailUser.profile.firstName = profile.name.givenName;
+            existingEmailUser.profile.lastName = profile.name.familyName;
+            existingEmailUser.email = profile.emails[0].value;
+            existingEmailUser.profile.picture = profile.photos[0].value;
+            existingEmailUser.save((err) => {
+              done(err, existingEmailUser);
+            });
+          } else {
+            done({ message: 'There is already an ImpGG account using this email address.' });
+          }
+        } else {
+          const user = new User();
+          // Add default domain
+          Domain.findOne({ uri: env === 'development' ? 'localhost:3001' : 'imp.gg' }, (err, domain) => {
+            user.domains.push(domain._id);
+            user.email = profile.emails[0].value;
+            user.services.google = profile.id;
+            user.tokens.push({
+              kind: 'google',
+              accessToken,
+              accessTokenExpires: moment().add(params.expires_in, 'seconds').format(),
+              refreshToken,
+            });
+            user.profile.firstName = profile.name.givenName;
+            user.profile.lastName = profile.name.familyName;
+            user.email = profile.emails[0].value;
+            user.profile.picture = profile.photos[0].value;
+            user.save((err) => {
+              done(err, user);
+            });
+          });
+        }
+      });
+    });
+  }
+}));
+passport.use('google', googleStrategyConfig);
+refresh.use('google', googleStrategyConfig);
 /*
 passport.use(new FacebookStrategy({
   clientID: FACEBOOK_CLIENT_ID,
