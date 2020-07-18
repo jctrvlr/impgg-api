@@ -4,6 +4,7 @@ const ContactMessage = require('../models/contactMessage.model');
 exports.saveMessage = async (req, res, next) => {
   try {
     const contactMessage = new ContactMessage(req.body);
+    contactMessage.ip = req.ip;
     contactMessage.save();
 
     res.status(httpStatus.OK);
