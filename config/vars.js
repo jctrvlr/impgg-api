@@ -18,6 +18,10 @@ module.exports = {
   GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
   TWITCH_CLIENT_ID: process.env.TWITCH_CLIENT_ID,
   TWITCH_CLIENT_SECRET: process.env.TWITCH_CLIENT_SECRET,
+  stripeSecret: process.env.STRIPE_SECRET,
+  stripePublic: process.env.STRIPE_PUBLIC,
+  stripeProductId: process.env.STRIPE_PRODUCT_ID,
+  stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
   mongo: {
     uri: process.env.NODE_ENV === 'test' ? process.env.MONGO_URI_TESTS : process.env.MONGO_URI,
   },

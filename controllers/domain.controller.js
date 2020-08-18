@@ -99,7 +99,7 @@ exports.deleteDomain = async (req, res, next) => {
     const deleted = await domainFound.deleteOne();
 
     if (domainFound && deleted) {
-      user = await User.findOne({ _id: domainFound.creatorId }).populate('domains');
+      user = await User.findOne({ _id: domainFound.creatorId }).populate('domains').populate('subscription');
     }
     res.status(httpStatus.OK);
     res.json(user);
@@ -151,7 +151,7 @@ exports.create = async (req, res, next) => {
     const savedDomain = await domain.save();
     user.domains.push(savedDomain._id);
     await user.save();
-    const userTransformed = await User.findOne({ _id: user._id }).populate('domains');
+    const userTransformed = await User.findOne({ _id: user._id }).populate('domains').populate('subscription');
     res.status(httpStatus.CREATED);
     res.json(userTransformed);
   } catch (error) {

@@ -12,16 +12,20 @@ const { Strategy: TwitchStrategy } = require('@d-fischer/passport-twitch');
 // const { Strategy: GitHubStrategy } = require('passport-github2');
 const { OAuth2Strategy: GoogleStrategy } = require('passport-google-oauth');
 // const { Strategy: LinkedInStrategy } = require('passport-linkedin-oauth2');
-
 const {
   jwtSecret,
   env,
+  stripeSecret,
   baseUrl,
   GOOGLE_CLIENT_ID,
   GOOGLE_CLIENT_SECRET,
   TWITCH_CLIENT_ID,
   TWITCH_CLIENT_SECRET,
 } = require('./vars');
+
+// eslint-disable-next-line import/order
+const stripe = require('stripe')(stripeSecret);
+
 const User = require('../models/user.model');
 const Domain = require('../models/domain.model');
 
@@ -46,7 +50,7 @@ const twitchStrategyConfig = new TwitchStrategy({
   callbackURL: `${baseUrl}/auth/callback/twitch`,
   scope: ['user_read', 'user:read:email'],
   passReqToCallback: true,
-}, (req, accessToken, refreshToken, params, profile, done) => {
+}, async (req, accessToken, refreshToken, params, profile, done) => {
   if (profile && !profile.email) {
     done({ message: 'You must confirm your Twitch email before you can create an account.' });
   }
@@ -75,12 +79,12 @@ const twitchStrategyConfig = new TwitchStrategy({
       }
     });
   } else {
-    User.findOne({ 'services.twitch': profile.id }, (err, existingUser) => {
+    User.findOne({ 'services.twitch': profile.id }, async (err, existingUser) => {
       if (err) { return done(err); }
       if (existingUser) {
         return done(null, existingUser);
       }
-      User.findOne({ email: profile.email }, (err, existingEmailUser) => {
+      User.findOne({ email: profile.email }, async (err, existingEmailUser) => {
         if (err) { return done(err); }
         if (existingEmailUser) {
           if (!existingEmailUser.services.twitch) {
@@ -101,12 +105,19 @@ const twitchStrategyConfig = new TwitchStrategy({
             done({ message: 'There is already an ImpGG account using this email address.' });
           }
         } else {
+          // Generate stripe customer
+          const customer = await stripe.customers.create({
+            email: profile.email,
+          });
           const user = new User();
           // Add default domain
           Domain.findOne({ uri: env === 'development' ? 'localhost:3001' : 'imp.gg' }, (err, domain) => {
             console.log('profile: ', profile);
+
             user.domains.push(domain._id);
             user.email = profile.email;
+            // Add stripe customer id
+            user.stripeCustomerId = customer.id;
             user.services.twitch = profile.id;
             user.tokens.push({
               kind: 'twitch',
@@ -115,7 +126,6 @@ const twitchStrategyConfig = new TwitchStrategy({
               refreshToken,
             });
             user.profile.firstName = profile.display_name;
-            user.email = profile.email;
             user.profile.picture = profile.profile_image_url;
             user.save((err) => {
               done(err, user);
@@ -136,7 +146,7 @@ const googleStrategyConfig = new GoogleStrategy({
   callbackURL: `${baseUrl}/auth/callback/google`,
   passReqToCallback: true,
 },
-((req, accessToken, refreshToken, params, profile, done) => {
+(async (req, accessToken, refreshToken, params, profile, done) => {
   if (profile && !profile.emails[0].value) {
     done({ message: 'You must confirm your Google email before you can create an account.' });
   }
@@ -166,12 +176,12 @@ const googleStrategyConfig = new GoogleStrategy({
       }
     });
   } else {
-    User.findOne({ 'services.google': profile.id }, (err, existingUser) => {
+    User.findOne({ 'services.google': profile.id }, async (err, existingUser) => {
       if (err) { return done(err); }
       if (existingUser) {
         return done(null, existingUser);
       }
-      User.findOne({ email: profile.emails[0].value }, (err, existingEmailUser) => {
+      User.findOne({ email: profile.emails[0].value }, async (err, existingEmailUser) => {
         if (err) { return done(err); }
         if (existingEmailUser) {
           if (!existingEmailUser.services.google) {
@@ -193,10 +203,15 @@ const googleStrategyConfig = new GoogleStrategy({
             done({ message: 'There is already an ImpGG account using this email address.' });
           }
         } else {
+          const customer = await stripe.customers.create({
+            email: profile.emails[0].value,
+          });
           const user = new User();
           // Add default domain
           Domain.findOne({ uri: env === 'development' ? 'localhost:3001' : 'imp.gg' }, (err, domain) => {
             user.domains.push(domain._id);
+            // Add stripe customer id
+            user.stripeCustomerId = customer.id;
             user.email = profile.emails[0].value;
             user.services.google = profile.id;
             user.tokens.push({
