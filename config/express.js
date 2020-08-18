@@ -27,7 +27,13 @@ app.use(useragent.express());
 app.use(morgan(logs));
 
 // parse body params and attache them to req.body
-app.use(bodyParser.json());
+app.use((req, res, next) => {
+  if (req.originalUrl === '/v1/payments/stripe-webhook') {
+    next();
+  } else {
+    bodyParser.json()(req, res, next);
+  }
+});
 app.use(bodyParser.urlencoded({ extended: true }));
 
 // gzip compression

@@ -8,17 +8,16 @@ const jwt = require('jwt-simple');
 const uuidv4 = require('uuid/v4');
 const APIError = require('../utils/APIError');
 
-const { env, jwtSecret, jwtExpirationInterval } = require('../config/vars');
+const {
+  env, jwtSecret, jwtExpirationInterval, stripeSecret,
+} = require('../config/vars');
+// eslint-disable-next-line import/order
+const stripe = require('stripe')(stripeSecret);
 
 /**
 * User Roles
 */
 const roles = ['user', 'admin'];
-
-/**
- * Subscription Types
- */
-const subscriptions = ['pro', 'enterprise', 'admin'];
 
 /**
  * User Schema
@@ -83,32 +82,24 @@ const userSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Domain',
   }],
+  // Payment Method ID for stripe
+  stripePaymentMethodId: String,
+
+  stripeCustomerId: String,
 
   subscription: {
-    subType: {
-      type: String,
-      enum: subscriptions,
-    },
-    status: String,
-    transactionId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Transaction',
-      select: false,
-    },
-    startTimestamp: {
-      type: Date,
-    },
-    endTimestamp: {
-      type: Date,
-    },
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Subscription',
   },
-
+  // oAuth Services
   services: {
     facebook: String,
     google: String,
     twitch: String,
   },
+  // oAuth tokens
   tokens: Array,
+
   role: {
     type: String,
     enum: roles,
@@ -126,6 +117,14 @@ const userSchema = new mongoose.Schema({
  */
 userSchema.pre('save', async function save(next) {
   try {
+    if (!this.stripeCustomerId) {
+      // Generate stripe customer
+      const customer = await stripe.customers.create({
+        email: this.email,
+      });
+      // Add stripe customer id
+      this.stripeCustomerId = customer.id;
+    }
     if (!this.isModified('password')) return next();
 
     const rounds = env === 'test' ? 1 : 10;

@@ -4,11 +4,12 @@ const sgMail = require('@sendgrid/mail');
 
 const User = require('../models/user.model');
 const RefreshToken = require('../models/refreshToken.model');
-const { jwtExpirationInterval } = require('../config/vars');
 const Domain = require('../models/domain.model');
 const {
-  env, SENDGRID_API_KEY, fromEmail, baseUrl,
+  env, SENDGRID_API_KEY, fromEmail, baseUrl, jwtExpirationInterval, stripeSecret,
 } = require('../config/vars');
+// eslint-disable-next-line import/order
+const stripe = require('stripe')(stripeSecret);
 
 sgMail.setApiKey(SENDGRID_API_KEY);
 
@@ -31,14 +32,27 @@ function generateTokenResponse(user, accessToken) {
  */
 exports.register = async (req, res, next) => {
   try {
+    // Generate stripe customer
+    const customer = await stripe.customers.create({
+      email: req.body.email,
+    });
     const user = new User(req.body);
+    // Add stripe customer id
+    user.stripeCustomerId = customer.id;
+
     // Add default domain
     const domain = await Domain.findOne({ uri: env === 'development' ? 'localhost:3001' : 'imp.gg' });
     user.domains.push(domain._id);
 
     const savedUser = await user.save();
 
-    const userTransformed = await User.findOne({ _id: savedUser._id }).populate('domains');
+    const userTransformed = await User.findOne({ _id: savedUser._id }).populate('domains').populate('subscription')
+      .populate({
+        path: 'subscription',
+        populate: [{
+          path: 'subscriptionPrice',
+        }],
+      });
     const token = generateTokenResponse(savedUser, savedUser.token());
     res.status(httpStatus.CREATED);
     return res.json({ token, user: userTransformed });
@@ -55,7 +69,13 @@ exports.login = async (req, res, next) => {
   try {
     const { user, accessToken } = await User.findAndGenerateToken(req.body);
     const token = generateTokenResponse(user, accessToken);
-    const userTransformed = await User.findOne({ _id: user._id }).select('+password').populate('domains');
+    const userTransformed = await User.findOne({ _id: user._id }).select('+password').populate('domains').populate('subscription')
+      .populate({
+        path: 'subscription',
+        populate: [{
+          path: 'subscriptionPrice',
+        }],
+      });
 
     return res.json({ token, user: userTransformed });
   } catch (error) {
@@ -90,7 +110,12 @@ exports.oAuth = async (req, res, next) => {
     const { user } = req;
     const accessToken = user.token();
     const token = generateTokenResponse(user, accessToken);
-    const userTransformed = await User.findOne({ _id: user._id }).populate('domains');
+    const userTransformed = await User.findOne({ _id: user._id }).populate('domains').populate('subscription').populate({
+      path: 'subscription',
+      populate: [{
+        path: 'subscriptionPrice',
+      }],
+    });
     return res.json({ token, user: userTransformed });
   } catch (error) {
     return next(error);
@@ -109,7 +134,12 @@ exports.facebook = async (req, res, next) => {
 
     const savedUser = await _user.save();
 
-    const userTransformed = await User.findOne({ _id: savedUser._id }).populate('domains');
+    const userTransformed = await User.findOne({ _id: savedUser._id }).populate('domains').populate('subscription').populate({
+      path: 'subscription',
+      populate: [{
+        path: 'subscriptionPrice',
+      }],
+    });
     const token = generateTokenResponse(savedUser, savedUser.token());
     res.status(httpStatus.CREATED);
     return res.json({ token, user: userTransformed });
@@ -122,9 +152,12 @@ exports.google = async (req, res, next) => {
   try {
     const { user } = req;
 
-    console.log(user);
-
-    const userTransformed = await User.findOne({ _id: user._id }).populate('domains');
+    const userTransformed = await User.findOne({ _id: user._id }).populate('domains').populate({
+      path: 'subscription',
+      populate: [{
+        path: 'subscriptionPrice',
+      }],
+    });
     const token = generateTokenResponse(user, user.token());
     res.status(httpStatus.OK);
 
@@ -141,7 +174,12 @@ exports.twitch = async (req, res, next) => {
   try {
     const { user } = req;
 
-    const userTransformed = await User.findOne({ _id: user._id }).populate('domains');
+    const userTransformed = await User.findOne({ _id: user._id }).populate('domains').populate({
+      path: 'subscription',
+      populate: [{
+        path: 'subscriptionPrice',
+      }],
+    });
     const token = generateTokenResponse(user, user.token());
     res.status(httpStatus.OK);
 

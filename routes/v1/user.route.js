@@ -86,7 +86,7 @@ router
    *
    * @apiError (Unauthorized 401)  Unauthorized  Only authenticated Users can access the data
    */
-  .get(authorize(), controller.loggedIn);
+  .get(authorize(LOGGED_USER), controller.loggedIn);
 
 router
   .route('/profile/picture')

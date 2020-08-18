@@ -1,8 +1,11 @@
 const httpStatus = require('http-status');
 const { omit } = require('lodash');
+
 const User = require('../models/user.model');
 const Domain = require('../models/domain.model');
-const { env } = require('../config/vars');
+const { env, stripeSecret } = require('../config/vars');
+// eslint-disable-next-line import/order
+const stripe = require('stripe')(stripeSecret);
 
 /**
  * Load user and append to req.
@@ -23,7 +26,7 @@ exports.load = async (req, res, next, id) => {
  * @public
  */
 exports.get = async (req, res) => {
-  const userTransformed = await req.locals.user.populate('domains');
+  const userTransformed = await req.locals.user.populate('domains').populate('subscription');
   res.json(userTransformed);
 };
 
@@ -33,10 +36,15 @@ exports.get = async (req, res) => {
  */
 exports.loggedIn = async (req, res, next) => {
   try {
-    const userTransformed = await User.findOne({ _id: req.user._id }).populate('domains');
-    res.json(userTransformed);
+    const userTransformed = await User.findOne({ _id: req.user._id }).populate('domains').populate('subscription').populate({
+      path: 'subscription',
+      populate: [{
+        path: 'subscriptionPrice',
+      }],
+    });
+    return res.json({ user: userTransformed });
   } catch (err) {
-    next(err);
+    return next(err);
   }
 };
 
@@ -46,14 +54,21 @@ exports.loggedIn = async (req, res, next) => {
  */
 exports.create = async (req, res, next) => {
   try {
+    // Generate stripe customer
+    const customer = await stripe.customers.create({
+      email: req.body.email,
+    });
     const user = new User(req.body);
+    // Add stripe customer id
+    user.stripeCustomerId = customer.id;
+
     // Add default domain
     const domain = await Domain.findOne({ uri: env === 'development' ? 'http://localhost:3001' : 'https://imp.gg' });
     user.preferences.primaryDomain = domain._id;
     user.domains.push(domain._id);
 
     const savedUser = await user.save();
-    const userTransformed = await User.findOne({ _id: savedUser._id }).populate('domains');
+    const userTransformed = await User.findOne({ _id: savedUser._id }).populate('domains').populate('subscription');
 
     res.status(httpStatus.CREATED);
     res.json(userTransformed);
