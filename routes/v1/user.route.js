@@ -129,6 +129,26 @@ router
   .post(authorize(LOGGED_USER), validate(changePassword), controller.changePassword);
 
 router
+  .route('/reset')
+  /**
+   * @api {post} v1/users/reset Reset User
+   * @apiDescription Reset users links
+   * @apiVersion 1.0.0
+   * @apiName ResetUser
+   * @apiGroup User
+   * @apiPermission user
+   *
+   * @apiHeader {String} Authorization   User's access token
+   *
+   * @apiSuccess {OK 200}  success         Successful
+   *
+   * @apiError (Unauthorized 401) Unauthorized Only authenticated users can access the data
+   * @apiError (Forbidden 403)    Forbidden    Only user with same id or admins can access the data
+   * @apiError (Not Found 404)    NotFound     User does not exist
+   */
+  .get(authorize(LOGGED_USER), controller.resetUser);
+
+router
   .route('/:userId')
   /**
    * @api {get} v1/users/:id Get User
