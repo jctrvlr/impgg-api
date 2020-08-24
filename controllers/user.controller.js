@@ -3,6 +3,10 @@ const { omit } = require('lodash');
 
 const User = require('../models/user.model');
 const Domain = require('../models/domain.model');
+const Link = require('../models/link.model');
+const PageView = require('../models/pageView.model');
+const Subscription = require('../models/subscription.model');
+
 const { env, stripeSecret } = require('../config/vars');
 // eslint-disable-next-line import/order
 const stripe = require('stripe')(stripeSecret);
@@ -28,6 +32,46 @@ exports.load = async (req, res, next, id) => {
 exports.get = async (req, res) => {
   const userTransformed = await req.locals.user.populate('domains').populate('subscription');
   res.json(userTransformed);
+};
+
+/**
+ * Reset User
+ * @public
+ */
+exports.resetUser = async (req, res, next) => {
+  try {
+    const { user } = req;
+
+    const linkIds = await Link.find({ creatorId: user._id }, { _id: 1 });
+
+    // Delete users domains
+    await Domain.deleteMany({
+      creatorId: user._id,
+    });
+    // Delete pageviews
+    await PageView.deleteMany({
+      linkId: {
+        $in: linkIds,
+      },
+    });
+    // Delete links
+    await Link.deleteMany({
+      _id: {
+        $in: linkIds,
+      },
+    });
+    // Delete user subscription
+    await Subscription.deleteMany({
+      user: user._id,
+    });
+    // Delete user
+    await User.deleteOne({ _id: user._id });
+
+    res.status(httpStatus.OK);
+    return res.json({ ok: true });
+  } catch (error) {
+    return next(error);
+  }
 };
 
 /**
