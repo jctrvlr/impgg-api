@@ -6,6 +6,30 @@ const logger = require('../config/logger');
 const PageView = require('../models/pageView.model');
 
 /**
+ * Get latest link click data
+ * @public
+ */
+exports.getClickData = async (req, res, next) => {
+  try {
+    const { initial } = req.body;
+
+    if (initial) {
+      // if initial pull full data
+      const data = await PageView.aggregate([{
+
+      }]);
+      return res.json(data);
+    }
+    // else pull last 5 minutes
+    const data = await PageView.aggregate([{
+
+    }]);
+    return res.json(data);
+  } catch (err) {
+    return next(err);
+  }
+};
+/**
  * Get link extended info for dashboard dialog
  * @public
  * {
